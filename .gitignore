@@ -95,3 +95,10 @@ dmypy.json
 # VS code configuration
 .vscode
 .history
+
+.databricks
+
+# Custom project settings
+databricks.yml
+uv.lock
+tests/**/*.whl
