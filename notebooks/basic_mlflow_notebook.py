@@ -14,10 +14,10 @@ from sklearn.preprocessing import RobustScaler
 from pyspark.sql import SparkSession
 from lightgbm import LGBMClassifier
 
-from credit_default import __version__
-from credit_default.config import Config
-from credit_default.data_ingestion import DataLoader
-from credit_default.utility import setup_logging
+from hotel_reservations import __version__
+from hotel_reservations.config import Config
+from hotel_reservations.data_ingestion import DataLoader
+from hotel_reservations.utility import setup_logging
 
 print(__version__)
 # COMMAND ----------

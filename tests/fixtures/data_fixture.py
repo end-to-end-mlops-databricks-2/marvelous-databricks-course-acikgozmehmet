@@ -1,16 +1,26 @@
+"""Data fixture."""
+
 import os
 
 import pytest
 from dotenv import load_dotenv
 
-from credit_default.config import Config
-from credit_default.data_ingestion import DataLoader
-from credit_default.utility import is_databricks
+from hotel_reservations.config import Config
+from hotel_reservations.data_ingestion import DataLoader
+from hotel_reservations.utility import is_databricks
 from tests.consts import PROJECT_DIR
 
 
 @pytest.fixture(scope="function")
 def dataloader() -> DataLoader:
+    """Fixture to initialize and return a DataLoader instance.
+
+    This function sets up the environment by loading configurations from a `.env` file
+    and a YAML configuration file. It determines the appropriate data file path based on
+    whether the code is running on Databricks or locally.
+
+    :return: An instance of DataLoader initialized with the appropriate file path and configuration.
+    """
     filename = (PROJECT_DIR / "project.env").as_posix()
 
     load_dotenv(filename)

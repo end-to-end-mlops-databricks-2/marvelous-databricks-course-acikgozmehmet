@@ -2,13 +2,12 @@
 
 import pytest
 
-from credit_default.config import Config
+from hotel_reservations.config import Config
 
 
 @pytest.fixture(scope="module")
 def config(tmp_path_factory: pytest.TempPathFactory) -> Config:
-    """
-    Fixture to create a temporary configuration file for testing.
+    """Fixture to create a temporary configuration file for testing.
 
     :param tmp_path_factory: A factory for creating temporary paths.
     :return: A Config object loaded from the temporary configuration file.
@@ -55,8 +54,7 @@ extra_field: extra_value
 
 
 def test_assert_config_structure(config: Config) -> None:
-    """
-    Test the structure of the configuration object.
+    """Test the structure of the configuration object.
 
     :param config: The configuration object to be tested.
     """
@@ -66,8 +64,7 @@ def test_assert_config_structure(config: Config) -> None:
 
 
 def test_assert_num_features(config: Config) -> None:
-    """
-    Test to assert the number of features in the configuration.
+    """Test to assert the number of features in the configuration.
 
     :param config: Configuration object containing feature information.
     """
@@ -78,8 +75,7 @@ def test_assert_num_features(config: Config) -> None:
 
 
 def test_assert_cat_features(config: Config) -> None:
-    """
-    Test to assert that categorical features in the configuration are None.
+    """Test to assert that categorical features in the configuration are None.
 
     :param config: An instance of Config containing the configuration settings.
     """
@@ -87,8 +83,7 @@ def test_assert_cat_features(config: Config) -> None:
 
 
 def test_assert_target(config: Config) -> None:
-    """
-    Test the target configuration of the provided Config object.
+    """Test the target configuration of the provided Config object.
 
     :param config: The Config object containing target configuration.
     """
@@ -98,8 +93,7 @@ def test_assert_target(config: Config) -> None:
 
 
 def test_assert_extra_field(config: Config) -> None:
-    """
-    Test to assert the configuration schema name and check for extra fields.
+    """Test to assert the configuration schema name and check for extra fields.
 
     :param config: The configuration object to be tested.
     """

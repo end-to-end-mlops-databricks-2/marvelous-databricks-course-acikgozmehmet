@@ -1,12 +1,8 @@
 """Configuration schema for the credit default application."""
 
-from typing import (
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-)
+from __future__ import annotations
+
+from typing import Literal
 
 import yaml
 from loguru import logger
@@ -18,48 +14,31 @@ from pydantic import (
 
 
 class NumFeature(BaseModel):
-    """
-    A class representing a numerical feature.
+    """A class representing a numerical feature.
 
     :param name: The name of the numerical feature.
     :param dtype: The data type of the numerical feature, either 'float64' or 'int64'.
     """
 
     name: str
-    dtype: Literal["float64", "int64", "int32"]
+    dtype: Literal["float64", "int64", "int32", "int16", "int8"]
     alias: str
 
 
 class CatFeature(BaseModel):
-    """
-    A class representing a categorical feature.
+    """A class representing a categorical feature.
 
     :param name: The name of the categorical feature.
     :param dtype: The data type of the feature, which is always 'object'.
     """
 
     name: str
-    dtype: Literal["object"]
+    dtype: Literal["object", "category"]
     alias: str
 
 
-class Features(BaseModel):
-    """
-    A class representing features with clean and robust attributes.
-
-    A class representing features with clean and robust attributes.
-
-    :param clean: A list of clean features.
-    :param robust: A list of robust features.
-    """
-
-    clean: List[str]
-    robust: List[str]
-
-
 class Target(BaseModel):
-    """
-    A class representing a target with a name, data type, and new name.
+    """A class representing a target with a name, data type, and new name.
 
     :param name: The name of the target.
     :param dtype: The data type of the target, which can be 'float64' or 'int64'.
@@ -67,13 +46,12 @@ class Target(BaseModel):
     """
 
     name: str
-    dtype: Literal["float64", "int64"]
+    dtype: Literal["float64", "int64", "int32", "object", "category"]
     alias: str
 
 
 class Config(BaseModel):
-    """
-    A class representing a configuration schema.
+    """A class representing a configuration schema.
 
     :param schema_name: The name of the schema.
     :param num_features: A list of numerical features.
@@ -83,16 +61,13 @@ class Config(BaseModel):
 
     catalog_name: str
     schema_name: str
-    parameters: Dict[str, Any] = Field(description="Parameters for model training")
     num_features: list[NumFeature]
-    cat_features: Optional[list[CatFeature]] = Field(default_factory=list)
+    cat_features: list[CatFeature] | None = Field(default_factory=list)
     target: Target
-    features: Features
 
     @classmethod
-    def from_yaml(cls, config_file: str):
-        """
-        Load the configuration from a specified YAML file.
+    def from_yaml(cls, config_file: str) -> Config:
+        """Load the configuration from a specified YAML file.
 
         :param config_file: The path to the YAML configuration file.
         :return: An instance of Config populated with the loaded data.
@@ -101,7 +76,7 @@ class Config(BaseModel):
         :raises ValidationErr: If there is a validation error in the configuration.
         """
         try:
-            with open(config_file, "r", encoding="utf-8") as file:
+            with open(config_file, encoding="utf-8") as file:
                 config_data = yaml.safe_load(file)
             config = Config(**config_data)
             logger.info(f"Loaded configuration from {config_file}")

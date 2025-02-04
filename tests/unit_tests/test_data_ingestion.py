@@ -1,22 +1,21 @@
 """Unit tests for the DataCleaner class."""
 
 import pathlib
+from datetime import date
 
 import pandas as pd
 import pytest
 from pyspark.errors import AnalysisException
+from pytest import CaptureFixture
 
-from credit_default.config import Config
-from credit_default.data_ingestion import DataLoader
-from credit_default.utility import is_databricks
-
-# from tests.consts import PROJECT_DIR
+from hotel_reservations.config import Config
+from hotel_reservations.data_ingestion import DataLoader
+from hotel_reservations.utility import is_databricks
 from tests.consts import PROJECT_DIR
 
 
-def test__load_data_success(dataloader) -> None:
-    """
-    Test the data loading functionality.
+def test__load_data_success(dataloader: DataLoader) -> None:
+    """Test the data loading functionality.
 
     This function verifies that the data is loaded correctly from the specified
     CSV file and that the DataFrame is not empty.
@@ -29,8 +28,7 @@ def test__load_data_success(dataloader) -> None:
 
 @pytest.mark.skipif(is_databricks(), reason="Only Local test")
 def test__load_data_file_not_found() -> None:
-    """
-    Test that a FileNotFoundError is raised when the data file is not found.
+    """Test that a FileNotFoundError is raised when the data file is not found.
 
     :return: None
     :raises FileNotFoundError: If the data file does not exist.
@@ -44,8 +42,7 @@ def test__load_data_file_not_found() -> None:
 
 @pytest.mark.skipif(not is_databricks(), reason="Only on Databricks")
 def test__load_data_path_not_found() -> None:
-    """
-    Test that a FileNotFoundError is raised when the data file is not found.
+    """Test that a FileNotFoundError is raised when the data file is not found.
 
     :return: None
     :raises FileNotFoundError: If the data file does not exist.
@@ -57,9 +54,8 @@ def test__load_data_path_not_found() -> None:
         _ = DataLoader(filepath=data_filepath.as_posix(), config=config)
 
 
-def test__validate_columns(dataloader) -> None:
-    """
-    Test the validation of columns in the data cleaner.
+def test___validate_required_columns(dataloader: DataLoader, capsys: CaptureFixture) -> None:
+    """Test the validation of columns in the data cleaner.
 
     This function loads the configuration and initializes the DataCleaner
     with the specified data file path, then validates the columns.
@@ -67,27 +63,27 @@ def test__validate_columns(dataloader) -> None:
     :param None: This function does not take any parameters.
     :return: None
     """
-    dataloader._validate_columns()
+    dataloader._validate_required_columns()
+    captured = capsys.readouterr()
+    assert captured.out == ""
 
 
-def test__validate_columns_missing_column_should_fail(dataloader) -> None:
-    """
-    Test to ensure it raises an exception when required columns are missing.
+def test__validate_columns_missing_column_should_fail(dataloader: DataLoader) -> None:
+    """Test to ensure it raises an exception when required columns are missing.
 
-    This test checks that an exception is raised when the 'LIMIT_BAL' column is dropped
+    This test checks that an exception is raised when the 'Booking_ID' column is dropped
     from the DataFrame, indicating that the validation for required columns is functioning correctly.
 
-    :raises Exception: If required columns are missing from the DataFrame.
+    :raises ValueError: If required columns are missing from the DataFrame.
     """
-    dataloader.df.drop(columns=["LIMIT_BAL"], inplace=True)
-    with pytest.raises(Exception) as exc:
-        dataloader._validate_columns()
+    dataloader.df.drop(columns=["Booking_ID"], inplace=True)
+    with pytest.raises(ValueError) as exc:
+        dataloader._validate_required_columns()
     assert "Missing columns in data:" in str(exc.value)
 
 
-def test__validate_column_types_should_pass(dataloader) -> None:
-    """
-    Test the data types validation process to ensure it passes.
+def test__validate_data_types_should_pass(dataloader: DataLoader) -> None:
+    """Test the data types validation process to ensure it passes.
 
     This function sets up the necessary file paths and configuration,
     then invokes the data type validation method of the DataCleaner class.
@@ -95,15 +91,15 @@ def test__validate_column_types_should_pass(dataloader) -> None:
     :param None: This function does not take any parameters.
     :return: None
     """
-    dataloader._validate_columns()
+    dataloader._validate_required_columns()
     dataloader._rename_columns()
-    dataloader._convert_column_types()
-    dataloader._validate_column_types()
+    dataloader._convert_column_data_types()
+    dataloader._validate_data_types()
+    print()
 
 
-def test__validate_column_types_fail_if_dtype_not_matching(dataloader):
-    """
-    Test that the data type validation fails if the data types do not match.
+def test__validate_column_types_fail_if_dtype_not_matching(dataloader: DataLoader) -> None:
+    """Test that the data type validation fails if the data types do not match.
 
     This function checks if an exception is raised when the numeric column's
     data type is not as expected.
@@ -111,21 +107,23 @@ def test__validate_column_types_fail_if_dtype_not_matching(dataloader):
     :raises Exception: If the data type of the numeric column does not match
                       the expected data type.
     """
-    dataloader._validate_columns()
+    dataloader._validate_required_columns()
     dataloader._rename_columns()
-    dataloader._convert_column_types()
+    dataloader._convert_column_data_types()
     # to mess up the data types for test
     num_feature1 = dataloader.config.num_features[1].alias
     dataloader.df[num_feature1] = dataloader.df[num_feature1].astype("str")
 
     with pytest.raises(Exception) as exc:
-        dataloader._validate_column_types()
-    assert f"Numeric column '{num_feature1}' must be {dataloader.config.num_features[1].dtype}" in str(exc.value)
+        dataloader._validate_data_types()
+    assert (
+        f"Column no_of_children should be of type {dataloader.config.num_features[1].dtype}, but is {dataloader.df[num_feature1].dtype}"
+        in str(exc.value)
+    )
 
 
-def test__validate_columnn_types_target_fail_if_dtype_not_matching(dataloader):
-    """
-    Test that the column type validation fails if the target column's data type does not match the expected type.
+def test__validate_columnn_types_target_fail_if_dtype_not_matching(dataloader: DataLoader) -> None:
+    """Test that the column type validation fails if the target column's data type does not match the expected type.
 
     This function checks if an exception is raised when the target column's data type is incorrect.
 
@@ -133,21 +131,21 @@ def test__validate_columnn_types_target_fail_if_dtype_not_matching(dataloader):
     :raises Exception: If the target column's data type does not match the expected type.
     """
     dataloader._rename_columns()
-    dataloader._convert_column_types()
+    dataloader._convert_column_data_types()
     # to mess up the target type for testing
     dataloader.df[dataloader.config.target.alias] = dataloader.df[dataloader.config.target.alias].astype("str")
 
     with pytest.raises(Exception) as exc:
-        dataloader._validate_column_types()
-    assert f"Target column '{dataloader.config.target.alias}' must be {dataloader.config.target.dtype}" in str(
-        exc.value
+        dataloader._validate_data_types()
+    assert (
+        f"Column {dataloader.config.target.alias} should be of type '{dataloader.config.target.dtype}', but is {dataloader.df[dataloader.config.target.alias].dtype}"
+        in str(exc.value)
     )
 
 
 @pytest.mark.skipif(is_databricks(), reason="Only Local test")
 def test__apply_value_correction(tmp_path: pathlib.Path) -> None:
-    """
-    Test the application of value corrections to a DataFrame.
+    """Test the application of value corrections to a DataFrame.
 
     :param tmp_path: A temporary directory path for creating test files.
     :type tmp_path: pathlib.Path
@@ -179,26 +177,24 @@ def test__apply_value_correction(tmp_path: pathlib.Path) -> None:
     assert actual == expected
 
 
-def test__convert_column_types(dataloader) -> None:
-    """
-    Test the assignment of column types to DataFrame columns.
+def test__convert_column_types(dataloader: DataLoader) -> None:
+    """Test the assignment of column types to DataFrame columns.
 
     This function loads the configuration and data, processes the data,
     and assigns the data types to the DataFrame columns.
     """
     dataloader._rename_columns()
 
-    # LIMIT_BAL -> 1st numeric feature
+    # no_of_children -> 1st numeric feature
     dataloader.config.num_features[1].dtype = "int64"
 
-    dataloader._convert_column_types()
+    dataloader._convert_column_data_types()
 
-    assert dataloader.df["Limit_bal"].dtype == "int64"
+    assert dataloader.df["no_of_children"].dtype == "int64"
 
 
-def test_process_data(dataloader) -> None:
-    """
-    Test the process of data cleaning.
+def test_process_data(dataloader: DataLoader) -> None:
+    """Test the process of data cleaning.
 
     This function loads configuration and processes the data using the DataCleaner class.
 
@@ -209,9 +205,8 @@ def test_process_data(dataloader) -> None:
     assert dataloader.processed is True
 
 
-def test_target_value_counts(dataloader) -> None:
-    """
-    Test the value counts of the target variable in the dataset.
+def test_target_value_counts(dataloader: DataLoader) -> None:
+    """Test the value counts of the target variable in the dataset.
 
     This function loads the configuration and data, processes the data,
     and prints the normalized value counts of the target variable.
@@ -225,7 +220,7 @@ def test_target_value_counts(dataloader) -> None:
     print(f"{target_counts =}")
 
 
-def test_split_data_when_processed_data(dataloader) -> None:
+def test_split_data_when_processed_data(dataloader: DataLoader) -> None:
     """Test the split_data method of the DataPreprocessor class."""
     dataloader.process_data()
     train_set, test_set = dataloader.split_data()
@@ -236,9 +231,8 @@ def test_split_data_when_processed_data(dataloader) -> None:
     assert test_set.shape[1] == len(dataloader.df.columns)
 
 
-def test_split_data_when_not_processed_data(dataloader) -> None:
-    """
-    Test the split_data method when the data has not been processed.
+def test_split_data_when_not_processed_data(dataloader: DataLoader) -> None:
+    """Test the split_data method when the data has not been processed.
 
     :param data_cleaner: An instance of the data cleaner class.
     :raises ValueError: If the data has not been processed.
@@ -246,3 +240,30 @@ def test_split_data_when_not_processed_data(dataloader) -> None:
     with pytest.raises(ValueError) as exc:
         _, _ = dataloader.split_data()
     assert "Data must be processed before splitting." in str(exc.value)
+
+
+def test__normalize_arrival_date(dataloader: DataLoader) -> None:
+    """Test the _normalize_arrival_date method of the DataLoader class.
+
+    This function checks if the method correctly adds an 'arrival' column to
+    the dataframe and ensures all values in the column are of type date.
+
+    :param dataloader: An instance of the DataLoader class to be tested
+    """
+    dataloader._normalize_arrival_date()
+    assert "arrival" in dataloader.df.columns.tolist()
+    assert all(isinstance(d, date) for d in dataloader.df["arrival"])
+
+
+def test_split_and_extract_data(dataloader: DataLoader) -> None:
+    """Test the split_and_extract_data method of the DataLoader class.
+
+    This function checks if the method correctly splits the data into two sets based on a condition.
+
+    :param dataloader: An instance of the DataLoader class to be tested
+    """
+    dataloader.process_data()
+    extra_set = dataloader.split_and_extract_data()
+    assert "Online" not in extra_set["market_segment_type"].unique().tolist()
+    assert dataloader.df["market_segment_type"].nunique() == 1
+    assert "Online" in dataloader.df["market_segment_type"].unique().tolist()

@@ -1,132 +1,65 @@
 catalog_name: mlops_dev
 schema_name: acikgozm
 
-parameters:
-  learning_rate: 0.05
-  random_state: 42
-  force_col_wise: true
-
 num_features:
-  - name: ID
-    dtype: int32
-    alias: Id
-  - name: LIMIT_BAL
+  - name: no_of_adults
+    dtype: int8
+    alias: no_of_adults
+  - name: no_of_children
+    dtype: int8
+    alias: no_of_children
+  - name: no_of_weekend_nights
+    dtype: int8
+    alias: no_of_weekend_nights
+  - name: no_of_week_nights
+    dtype: int8
+    alias: no_of_week_nights
+  - name: required_car_parking_space
+    dtype: int8
+    alias: required_car_parking_space
+  - name: lead_time
+    dtype: int16
+    alias: lead_time
+  - name: arrival_year
+    dtype: int16
+    alias: arrival_year
+  - name: arrival_month
+    dtype: int8
+    alias: arrival_month
+  - name: arrival_date
+    dtype: int8
+    alias: arrival_date
+  - name: repeated_guest
+    dtype: int8
+    alias: repeated_guest
+  - name: no_of_previous_cancellations
+    dtype: int8
+    alias: no_of_previous_cancellations
+  - name: no_of_previous_bookings_not_canceled
+    dtype: int8
+    alias: no_of_previous_bookings_not_canceled
+  - name: avg_price_per_room
     dtype: float64
-    alias: Limit_bal
-  - name: SEX
-    dtype: int64
-    alias: Sex
-  - name: EDUCATION
-    dtype: int64
-    alias: Education
-  - name: MARRIAGE
-    dtype: int64
-    alias: Marriage
-  - name: AGE
-    dtype: int64
-    alias: Age
-  - name: PAY_0
-    dtype: int64
-    alias: Pay_0
-  - name: PAY_2
-    dtype: int64
-    alias: Pay_2
-  - name: PAY_3
-    dtype: int64
-    alias: Pay_3
-  - name: PAY_4
-    dtype: int64
-    alias: Pay_4
-  - name: PAY_5
-    dtype: int64
-    alias: Pay_5
-  - name: PAY_6
-    dtype: int64
-    alias: Pay_6
-  - name: BILL_AMT1
-    dtype: float64
-    alias: Bill_amt1
-  - name: BILL_AMT2
-    dtype: float64
-    alias: Bill_amt2
-  - name: BILL_AMT3
-    dtype: float64
-    alias: Bill_amt3
-  - name: BILL_AMT4
-    dtype: float64
-    alias: Bill_amt4
-  - name: BILL_AMT5
-    dtype: float64
-    alias: Bill_amt5
-  - name: BILL_AMT6
-    dtype: float64
-    alias: Bill_amt6
-  - name: PAY_AMT1
-    dtype: float64
-    alias: Pay_amt1
-  - name: PAY_AMT2
-    dtype: float64
-    alias: Pay_amt2
-  - name: PAY_AMT3
-    dtype: float64
-    alias: Pay_amt3
-  - name: PAY_AMT4
-    dtype: float64
-    alias: Pay_amt4
-  - name: PAY_AMT5
-    dtype: float64
-    alias: Pay_amt5
-  - name: PAY_AMT6
-    dtype: float64
-    alias: Pay_amt6
+    alias: avg_price_per_room
+  - name: no_of_special_requests
+    dtype: int8
+    alias: no_of_special_requests
 
 cat_features:
+  - name: Booking_ID
+    dtype: object
+    alias: booking_id
+  - name: type_of_meal_plan
+    dtype: object
+    alias: type_of_meal_plan
+  - name: room_type_reserved
+    dtype: object
+    alias: room_type_reserved
+  - name: market_segment_type
+    dtype: object
+    alias: market_segment_type
 
 target:
-  name: default.payment.next.month
-  dtype: int64
-  alias: Default
-
-features:
-  # Clean Column Names
-  clean:
-    - Id
-    - Limit_bal
-    - Sex
-    - Education
-    - Marriage
-    - Age
-    - Pay_0
-    - Pay_2
-    - Pay_3
-    - Pay_4
-    - Pay_5
-    - Pay_6
-    - Bill_amt1
-    - Bill_amt2
-    - Bill_amt3
-    - Bill_amt4
-    - Bill_amt5
-    - Bill_amt6
-    - Pay_amt1
-    - Pay_amt2
-    - Pay_amt3
-    - Pay_amt4
-    - Pay_amt5
-    - Pay_amt6
-
-  # Scaling Features
-  robust:
-    - Limit_bal
-    - Bill_amt1
-    - Bill_amt2
-    - Bill_amt3
-    - Bill_amt4
-    - Bill_amt5
-    - Bill_amt6
-    - Pay_amt1
-    - Pay_amt2
-    - Pay_amt3
-    - Pay_amt4
-    - Pay_amt5
-    - Pay_amt6
+  name: booking_status
+  dtype: category
+  alias: booking_status

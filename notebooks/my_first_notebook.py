@@ -1,22 +1,22 @@
 # Databricks notebook source
 
-!pip install /Volumes/mlops_dev/acikgozm/packages/credit_default-latest-py3-none-any.whl
+!pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 # COMMAND ----------
 
 %restart_python
 
 # COMMAND ----------
-from credit_default import __version__
+from hotel_reservations import __version__
 print(__version__)
 
 import os
 import pathlib
 from dotenv import load_dotenv
-from credit_default import __version__
-from credit_default.config import Config
-from credit_default.data_ingestion import DataLoader
-from credit_default.utility import setup_logging
-from credit_default.utility import is_databricks
+from hotel_reservations import __version__
+from hotel_reservations.config import Config
+from hotel_reservations.data_ingestion import DataLoader
+from hotel_reservations.utility import setup_logging
+from hotel_reservations.utility import is_databricks
 
 print(__version__)
 
@@ -27,13 +27,13 @@ print(f'{envfile_path =}')
 # COMMAND ----------
 load_dotenv(envfile_path)
 
-CLEANING_LOGS = os.environ['CLEANING_LOGS']
-CLEANING_LOGS = pathlib.Path(CLEANING_LOGS).resolve().as_posix()
-print(f"{CLEANING_LOGS = }")
+INGESTION_LOGS = os.environ['INGESTION_LOGS']
+INGESTION_LOGS = pathlib.Path(INGESTION_LOGS).resolve().as_posix()
+print(f"{INGESTION_LOGS = }")
 
 # COMMAND ----------
 
-setup_logging(CLEANING_LOGS)
+setup_logging(INGESTION_LOGS)
 
 # COMMAND ----------
 if is_databricks():

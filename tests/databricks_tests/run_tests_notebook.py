@@ -5,7 +5,7 @@
 %restart_python
 
 # COMMAND ----------
-from credit_default import __version__
+from hotel_reservations import __version__
 print(__version__)
 
 # COMMAND ----------
