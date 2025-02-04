@@ -34,6 +34,7 @@ jobs:
           uv pip install -r pyproject.toml --all-extras --no-cache-dir
           uv lock
           uv pip install -e .  --no-cache-dir
+          uvx pytest
 
       - name: Run pre-commit checks
         run: |
