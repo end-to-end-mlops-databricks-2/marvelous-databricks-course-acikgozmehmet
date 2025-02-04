@@ -40,7 +40,7 @@ jobs:
         run: |
           uv --version
           pip install --upgrade uv
-          uv build .
+          uv build
           cp ./dist/*.whl ./dist/hotel_reservations-latest-py3-none-any.whl --overwrite
           uv pip install ./dist/*.whl
           uvx pytest
