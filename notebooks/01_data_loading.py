@@ -19,6 +19,8 @@ from hotel_reservations.utility import setup_logging
 from hotel_reservations.utility import is_databricks
 
 print(__version__)
+# COMMAND ----------
+
 
 # COMMAND ----------
 envfile_path=pathlib.Path().joinpath("../project.env").resolve().as_posix()
