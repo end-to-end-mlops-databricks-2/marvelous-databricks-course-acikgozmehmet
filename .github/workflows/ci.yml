@@ -22,7 +22,7 @@ jobs:
         run: | # uv python install 3.11
           uv venv -p 3.11 venv
           source venv/bin/activate
-          echo "source venv/bin/activate" >> $GITHUB_ENV
+          # echo "source venv/bin/activate" >> $GITHUB_ENV
           which python
 
       - name: Verify src directory exists
