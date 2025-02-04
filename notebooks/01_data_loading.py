@@ -50,6 +50,8 @@ dataloader = DataLoader(filepath=DATABRICKS_FILE_PATH, config=CONFIG)
 # COMMAND ----------
 
 dataloader.process_data()
+# COMMAND ----------
+extra_set = dataloader.split_and_extract_data()
 
 # COMMAND ----------
 
@@ -57,7 +59,7 @@ train_set, test_set = dataloader.split_data()
 
 # COMMAND ----------
 
-dataloader.save_to_catalog(train_set=train_set, test_set=test_set)
+dataloader.save_to_catalog(train_set=train_set, test_set=test_set, extra_set=extra_set)
 
 # COMMAND ----------
 
@@ -65,4 +67,4 @@ dataloader.save_to_catalog(train_set=train_set, test_set=test_set)
 
 # COMMAND ----------
 # %sql
-# DROP SCHEMA ml_lab_ma CASCADE
+# DROP TABLE IF EXISTS mlops_dev.acikgozm.extra_set

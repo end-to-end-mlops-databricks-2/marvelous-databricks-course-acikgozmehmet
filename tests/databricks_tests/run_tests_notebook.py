@@ -1,5 +1,5 @@
 # Databricks notebook source
-!pip install /Volumes/mlops_dev/acikgozm/packages/credit_default-latest-py3-none-any.whl
+!pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 # COMMAND ----------
 
 %restart_python
