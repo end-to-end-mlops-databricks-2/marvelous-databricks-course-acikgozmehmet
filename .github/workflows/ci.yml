@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - hotel_reservation_data_ingestion
   pull_request:
     branches:
       - main
