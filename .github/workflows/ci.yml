@@ -34,6 +34,7 @@ jobs:
       - name: Install the dependencies
         run: |
           # uv sync --all-extras
+          source venv/bin/activate
           uv pip install -r pyproject.toml --all-extras --link-mode=copy  --no-cache-dir
           uv lock
           uv pip install -e . --link-mode=copy  --no-cache-dir
