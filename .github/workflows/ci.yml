@@ -38,6 +38,8 @@ jobs:
           uv pip install -r pyproject.toml --all-extras --link-mode=copy  --no-cache-dir
           uv lock
           uv pip install -e . --link-mode=copy  --no-cache-dir
+          pre-commit run --all-files
+          pytest
 
 
       - name: Run pre-commit checks
