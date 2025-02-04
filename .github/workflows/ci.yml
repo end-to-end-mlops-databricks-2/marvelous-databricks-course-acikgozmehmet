@@ -19,7 +19,7 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Set up Python
-        run: uv venv -p 3.11 .venv #uv python install 3.11
+        run: uv python install 3.11
 
       - name: Verify src directory exists
         run: |
@@ -30,11 +30,7 @@ jobs:
 
       - name: Install the dependencies
         run: |
-          # uv sync --all-extras
-          uv pip install -r pyproject.toml --all-extras --no-cache-dir
-          uv lock
-          uv pip install -e .  --no-cache-dir
-          uvx pytest
+          uv sync --all-extras
 
       - name: Run pre-commit checks
         run: |
@@ -42,10 +38,10 @@ jobs:
 
       - name: Install and run tests
         run: |
-          # uv --version
-          # pip install --upgrade uv
-          # uv pip install build
-          # uv build
-          # cp ./dist/*.whl ./dist/hotel_reservations-latest-py3-none-any.whl
-          # uv pip install ./dist/hotel_reservations-latest-py3-none-any.whl
+          uv --version
+          pip install --upgrade uv
+          uv pip install build
+          uv build .
+          cp ./dist/*.whl ./dist/hotel_reservations-latest-py3-none-any.whl --overwrite
+          uv pip install ./dist/*.whl
           uvx pytest
