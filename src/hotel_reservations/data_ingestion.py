@@ -11,8 +11,7 @@ from pyspark.sql import functions as F
 from sklearn.model_selection import train_test_split
 
 from hotel_reservations.config import Config
-from hotel_reservations.utility import is_databricks
-from hotel_reservations.utility import normalize_arrival_date
+from hotel_reservations.utility import is_databricks, normalize_arrival_date
 
 
 # pylint disable=invalid-name
