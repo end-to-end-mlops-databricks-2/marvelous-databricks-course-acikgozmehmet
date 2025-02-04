@@ -39,4 +39,4 @@ jobs:
       - name: Install and run tests
         run: |
           uv pip install -e .
-          uv python -m pytest --cov=src --cov-report=xml --junitxml=test-results.xml --cov-branch
+          pytest --cov=src --cov-report=xml --junitxml=test-results.xml --cov-branch
