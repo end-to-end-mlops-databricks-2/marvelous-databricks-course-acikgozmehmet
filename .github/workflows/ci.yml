@@ -38,6 +38,8 @@ jobs:
 
       - name: Install and run tests
         run: |
-          uv build
+          uv --version
+          pip install --upgrade uv
+          uv pip install build
           uv pip install ./dist/*.whl
           uvx pytest
