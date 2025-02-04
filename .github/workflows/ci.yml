@@ -38,6 +38,6 @@ jobs:
 
       - name: Install and run tests
         run: |
-          uv pip install pytest loguru python-dotenv
-          uv pip install -e .
+          uv build
+          uv pip install ./dist/*.whl
           uvx pytest
