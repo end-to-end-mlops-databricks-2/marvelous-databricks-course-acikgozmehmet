@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - hotel_reservation_data_ingestion
   pull_request:
     branches:
       - main
@@ -19,10 +18,8 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Set up Python
-        run: | # uv python install 3.11
-          uv venv -p 3.11 venv
-          # source venv/bin/activate
-          # echo "source venv/bin/activate" >> $GITHUB_ENV
+        run: | #uv python install 3.11
+          uv venv -p 3.11 .venv
           echo "${{ github.workspace }}/venv/bin" >> $GITHUB_PATH
           which python
 
@@ -35,27 +32,8 @@ jobs:
 
       - name: Install the dependencies
         run: |
-          which python
-          # uv sync --all-extras
-          # source venv/bin/activate
-          uv pip install -r pyproject.toml --all-extras --link-mode=copy  --no-cache-dir
-          uv lock
-          uv pip install -e . --link-mode=copy  --no-cache-dir
-          pre-commit run --all-files
-          pytest
-
+          uv sync --all-extras
 
       - name: Run pre-commit checks
         run: |
-          # uv run pre-commit run --all-files
-          pre-commit run --all-files
-
-      - name: Install and run tests
-        run: |
-          # uv --version
-          # pip install --upgrade uv
-          # uv build
-          # cp ./dist/*.whl ./dist/hotel_reservations-latest-py3-none-any.whl --overwrite
-          # uv pip install ./dist/*.whl
-          # uv pip run pytest
-          pytest
+          uv run pre-commit run --all-files
