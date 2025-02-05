@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - hotel_reservation_data_ingestion
   pull_request:
     branches:
       - main
@@ -18,7 +19,11 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Set up Python
-        run: uv python install 3.11
+        run: |
+          uv venv -p 3.11 .venv
+          # activating it for subsequent steps
+          echo "${{ github.workspace }}/.venv/bin" >> $GITHUB_PATH
+          which python
 
       - name: Verify src directory exists
         run: |
@@ -34,3 +39,7 @@ jobs:
       - name: Run pre-commit checks
         run: |
           uv run pre-commit run --all-files
+
+      - name: run tests
+        run: |
+          pytest

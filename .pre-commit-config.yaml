@@ -1,16 +1,24 @@
-exclude: ^tests/resources/
+exclude: '^(notebooks|tests/databricks_tests)/.*'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
+      - id: check-merge-conflict
       - id: check-added-large-files
+        args: ["--maxkb=5000"]
       - id: check-json
       - id: check-toml
       - id: check-yaml
+        args: ["--unsafe"]
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: requirements-txt-fixer
+      - id: no-commit-to-branch
+      - id: detect-private-key
+      - id: forbid-new-submodules
+      - id: check-docstring-first
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.9.4
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]

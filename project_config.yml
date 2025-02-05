@@ -1,0 +1,65 @@
+catalog_name: mlops_dev
+schema_name: acikgozm
+
+num_features:
+  - name: no_of_adults
+    dtype: int8
+    alias: no_of_adults
+  - name: no_of_children
+    dtype: int8
+    alias: no_of_children
+  - name: no_of_weekend_nights
+    dtype: int8
+    alias: no_of_weekend_nights
+  - name: no_of_week_nights
+    dtype: int8
+    alias: no_of_week_nights
+  - name: required_car_parking_space
+    dtype: int8
+    alias: required_car_parking_space
+  - name: lead_time
+    dtype: int16
+    alias: lead_time
+  - name: arrival_year
+    dtype: int16
+    alias: arrival_year
+  - name: arrival_month
+    dtype: int8
+    alias: arrival_month
+  - name: arrival_date
+    dtype: int8
+    alias: arrival_date
+  - name: repeated_guest
+    dtype: int8
+    alias: repeated_guest
+  - name: no_of_previous_cancellations
+    dtype: int8
+    alias: no_of_previous_cancellations
+  - name: no_of_previous_bookings_not_canceled
+    dtype: int8
+    alias: no_of_previous_bookings_not_canceled
+  - name: avg_price_per_room
+    dtype: float64
+    alias: avg_price_per_room
+  - name: no_of_special_requests
+    dtype: int8
+    alias: no_of_special_requests
+
+cat_features:
+  - name: Booking_ID
+    dtype: object
+    alias: booking_id
+  - name: type_of_meal_plan
+    dtype: object
+    alias: type_of_meal_plan
+  - name: room_type_reserved
+    dtype: object
+    alias: room_type_reserved
+  - name: market_segment_type
+    dtype: object
+    alias: market_segment_type
+
+target:
+  name: booking_status
+  dtype: category
+  alias: booking_status
