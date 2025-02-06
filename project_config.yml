@@ -1,5 +1,11 @@
 catalog_name: mlops_dev
 schema_name: acikgozm
+experiment_name: /Shared/hotel-reservations-basic
+
+parameters:
+  learning_rate: 0.02
+  n_estimators: 500
+  num_leaves: 17
 
 num_features:
   - name: no_of_adults
@@ -63,3 +69,25 @@ target:
   name: booking_status
   dtype: category
   alias: booking_status
+
+features:
+  numerical:
+  - no_of_adults
+  - no_of_children
+  - no_of_weekend_nights
+  - no_of_week_nights
+  - required_car_parking_space
+  - lead_time
+  # - arrival_year
+  # - arrival_month
+  # - arrival_date
+  - repeated_guest
+  - no_of_previous_cancellations
+  - no_of_previous_bookings_not_canceled
+  - avg_price_per_room
+  - no_of_special_requests
+  # - arrival
+
+  categorical:
+  - type_of_meal_plan
+  - room_type_reserved

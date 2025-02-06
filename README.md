@@ -24,3 +24,28 @@ source venv/bin/activate
 uv pip install -r pyproject.toml --all-extras
 uv lock
 ```
+
+## Modules
+### Data Ingestion (DataLoader)
+ `DataLoader` class is designed for cleaning and processing hotel reservation data using PySpark and pandas. Here's a summary of its key features and functionality:
+
+1. Data Loading: The class can load data from CSV files, supporting both local file systems and Databricks environments.
+
+2. Data Validation: It includes methods to validate required columns, data types, and check for null values in the dataset.
+
+3. Data Preprocessing: The class offers various data cleaning operations such as:
+   - Renaming columns based on configuration
+   - Converting and validation column data types
+   - Applying value corrections (e.g., mapping categorical values to numeric ones)
+   - Normalizing arrival dates
+   - Performing final quality checks on the data
+
+4. Data Splitting: It provides functionality to split the data into training and testing sets, as well as extracting non-online market segment data.
+
+5. Data Saving: For Databricks environments, it includes methods to save processed data to a catalog, creating tables with timestamps and enabling change data feed.
+
+6. Logging and Error Handling: The code extensively uses logging to track the data processing steps and implements error handling for various scenarios.
+
+7. Configuration: The class uses a configuration object to manage settings for features, target variables, and data types.
+
+Overall, it is a comprehensive data preparation pipeline for hotel reservation data, emphasizing data quality, flexibility, and compatibility with both local and cloud-based (Databricks) environments.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 import yaml
 from loguru import logger
@@ -11,6 +11,16 @@ from pydantic import (
     Field,
     ValidationError,
 )
+
+
+class Tag(BaseModel):
+    """Represents a tag in a version control system.
+
+    Contains information about the git SHA and branch associated with the tag.
+    """
+
+    git_sha: str
+    branch: str
 
 
 class NumFeature(BaseModel):
@@ -50,6 +60,19 @@ class Target(BaseModel):
     alias: str
 
 
+class Feature(BaseModel):
+    """Represents a feature with numeric and categorical attributes.
+
+    This class inherits from BaseModel and defines two list attributes.
+
+    :param numeric: A list of names for numerical features.
+    :param categorical: A list of names for categorical features.
+    """
+
+    numerical: list[str]
+    categorical: list[str]
+
+
 class Config(BaseModel):
     """A class representing a configuration schema.
 
@@ -59,11 +82,14 @@ class Config(BaseModel):
     :param target: The target feature.
     """
 
+    experiment_name: str
     catalog_name: str
     schema_name: str
+    parameters: dict[str, Any] = Field(description="Parameters for model training.")
     num_features: list[NumFeature]
     cat_features: list[CatFeature] | None = Field(default_factory=list)
     target: Target
+    features: Feature
 
     @classmethod
     def from_yaml(cls, config_file: str) -> Config:

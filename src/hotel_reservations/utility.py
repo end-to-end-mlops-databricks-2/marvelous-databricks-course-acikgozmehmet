@@ -5,7 +5,9 @@ import sys
 from datetime import datetime
 from typing import Any
 
+from delta.tables import DeltaTable
 from loguru import logger
+from pyspark.sql import SparkSession
 
 
 def setup_logging(log_file: str | None = None, log_level: str = "DEBUG") -> None:
@@ -82,3 +84,58 @@ def normalize_arrival_date(row: dict[str, Any]) -> datetime.date:
     :return: A normalized datetime.date object
     """
     return to_valid_date(row["arrival_year"], row["arrival_month"], row["arrival_date"])
+
+
+def get_delta_table_version1(table_path: str, spark: SparkSession | None = None) -> int:
+    """Get the latest version of a Delta table.
+
+    This function retrieves the most recent version number of a specified Delta table.
+
+    :param table_path: The path to the Delta table in Databricks.
+    :param spark: An optional SparkSession. If not provided, the function will try to get the active session.
+    :return: The latest version number of the Delta table.
+    """
+    if spark is None:
+        spark = SparkSession.builder.getOrCreate()
+
+    # delta_table = DeltaTable.forPath(spark, table_path) # noqa
+    delta_table = DeltaTable.forName(spark, table_path)
+
+    history = delta_table.history()
+    latest_version = history.select("version").first()[0]
+
+    return latest_version
+
+
+def get_delta_table_version(
+    catalog_name: str, schema_name: str, table_name: str, spark: SparkSession | None = None
+) -> int:
+    """Retrieve the current version of a Delta table.
+
+    This function fetches the version of a specified Delta table using the provided catalog, schema, and table names.
+
+    :param catalog_name: The name of the catalog containing the table
+    :param schema_name: The name of the schema containing the table
+    :param table_name: The name of the Delta table
+    :param spark: An optional SparkSession instance
+    :return: The current version of the Delta table, or None if an error occurs
+    """
+    # Create or get existing SparkSession
+    if spark is None:
+        spark = SparkSession.builder.getOrCreate()
+
+    # Construct the full table name
+    full_table_name = f"{catalog_name}.{schema_name}.{table_name}"
+
+    try:
+        # Get the Delta table
+        delta_table = DeltaTable.forName(spark, full_table_name)
+
+        # Get the current version
+        current_version = delta_table.history().select("version").first()[0]
+
+        return current_version
+
+    except Exception as e:
+        print(f"Error getting version for table {full_table_name}: {str(e)}")
+        return None

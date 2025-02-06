@@ -17,6 +17,7 @@ def config(tmp_path_factory: pytest.TempPathFactory) -> Config:
     config_str = """
 catalog_name: my_catalog
 schema_name: default
+experiment_name: /Shared/my_experiment
 parameters:
     random_state: 42
 
@@ -36,13 +37,18 @@ target:
   alias: Default
 
 features:
-  # Clean Column Names
-  clean:
-    - Id
+  numerical:
+  - no_of_adults
+  - no_of_children
+  - no_of_weekend_nights
+  - no_of_week_nights
 
-  robust:
-    - Limit_bal
 
+  categorical:
+  - booking_id
+  - type_of_meal_plan
+  - room_type_reserved
+  - market_segment_type
 
 extra_field: extra_value
 """

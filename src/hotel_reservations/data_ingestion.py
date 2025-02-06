@@ -175,7 +175,9 @@ class DataLoader:
             raise ValueError(message)
 
         if not {self.config.target.alias}.issubset(set(columns)):
-            message = f"Missing categorical columns {set(self.config.target.name).difference(set(columns))} after preprocessing"
+            message = (
+                f"Missing target column {set(self.config.target.name).difference(set(columns))} after preprocessing"
+            )
             logger.info(message)
             raise ValueError(message)
 
@@ -228,10 +230,11 @@ class DataLoader:
 
             self._convert_column_data_types()
             self._validate_data_types()
-            self._validate_processed_data()
 
             # Custom operations on data preprocessing
             self._normalize_arrival_date()
+
+            # final checks on data preprocessing
             self._validate_processed_data()
 
             logger.info("Data cleaning completed successfully")
