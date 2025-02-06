@@ -83,6 +83,7 @@ def test_end2end_on_databricks() -> None:
 
     This test loads data, prepares features, trains the model, and logs the model using the BasicModel class.
     """
+    # do not forget to set the uris
     mlflow.set_tracking_uri("databricks")
     # mlflow.set_registry_uri("databricks-uc") # noqa
 
