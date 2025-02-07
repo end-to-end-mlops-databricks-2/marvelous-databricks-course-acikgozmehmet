@@ -10,7 +10,15 @@ from loguru import logger
 from pydantic import ValidationError
 
 from hotel_reservations.config import Config
-from hotel_reservations.utility import is_databricks, normalize_arrival_date, setup_logging, to_valid_date
+from hotel_reservations.utility import (
+    get_current_git_sha,
+    get_delta_table_version,
+    is_databricks,
+    normalize_arrival_date,
+    setup_logging,
+    to_valid_date,
+)
+from tests.consts import PROJECT_DIR
 
 
 def test_setup_logging_with_logfile_should_create_logfile(tmp_path: pathlib.Path) -> None:
@@ -132,3 +140,31 @@ def test_normalize_arrival_date() -> None:
     ]
 
     assert all(data_df["arrival"] == expected_results), "The complex_function did not produce the expected results"
+
+
+@pytest.mark.skipif(not is_databricks(), reason="Only on Databricks")
+def test_get_delta_table_version() -> None:
+    """Test the get_delta_table_version function.
+
+    This test verifies that the Delta table version is retrieved correctly and is at least 1.
+    """
+    CONFIG_FILE_PATH = (PROJECT_DIR / "project_config.yml").as_posix()
+    config = Config.from_yaml(CONFIG_FILE_PATH)
+
+    catalog_name = config.catalog_name
+    schema_name = config.schema_name
+    table_name = "train_set"
+
+    version = get_delta_table_version(catalog_name=catalog_name, schema_name=schema_name, table_name=table_name)
+    print(f"Delta table version: {version}")
+    assert version >= 1
+
+
+def test_get_current_git_sha() -> None:
+    """Test the get_current_git_sha function.
+
+    This test checks if the get_current_git_sha function returns a non-empty value.
+    """
+    git_sha = get_current_git_sha()
+    assert git_sha
+    print(f"Get current git {git_sha}")

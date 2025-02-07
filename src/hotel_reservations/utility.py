@@ -1,6 +1,7 @@
 """Utility functions for credit default project."""
 
 import os
+import pathlib
 import sys
 from datetime import datetime
 from typing import Any
@@ -139,3 +140,19 @@ def get_delta_table_version(
     except Exception as e:
         print(f"Error getting version for table {full_table_name}: {str(e)}")
         return None
+
+
+def get_current_git_sha() -> str:
+    """Retrieve the current Git commit SHA from a file.
+
+    This function reads the Git commit SHA from a file named 'commit_sha.txt' located in the 'data' directory.
+
+    :return: The Git commit SHA as a string
+    :raises FileNotFoundError: If the commit_sha.txt file does not exist
+    """
+    file_path = pathlib.Path(__file__).parent / "data" / "commit_sha.txt"
+    if not file_path.exists():
+        raise FileNotFoundError(f"The file {file_path.as_posix()} does not exist")
+
+    git_sha = file_path.read_text(encoding="utf-8")
+    return git_sha.strip()

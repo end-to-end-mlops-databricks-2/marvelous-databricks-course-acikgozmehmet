@@ -90,7 +90,7 @@ def test_end2end_on_databricks() -> None:
     config_file_path = PROJECT_DIR / "project_config.yml"
     config = Config.from_yaml(config_file_path.as_posix())
 
-    tag = Tag(git_sha="abcdefg12", branch="week2")
+    tag = Tag(branch="week2")
 
     basic_model = BasicModel(config=config, tag=tag)
 
@@ -98,3 +98,6 @@ def test_end2end_on_databricks() -> None:
     basic_model.prepare_features()
     basic_model.train()
     basic_model.log_model()
+
+    # run_id = basic_model.run_id # noqa
+    # mlflow.delete_run(run_id)  # noqa

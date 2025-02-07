@@ -2,7 +2,7 @@
 
 import pytest
 
-from hotel_reservations.config import Config
+from hotel_reservations.config import Config, Tag
 
 
 @pytest.fixture(scope="module")
@@ -105,3 +105,13 @@ def test_assert_extra_field(config: Config) -> None:
     """
     assert config.schema_name == "default"
     assert not hasattr(config, "extra_field")
+
+
+def test_create_tag() -> None:
+    """Test the creation of a tag using the Config object.
+
+    :param config: The Config object containing target configuration.
+    """
+    tags = Tag(branch="test")
+    assert tags.git_sha
+    assert tags.branch == "test"

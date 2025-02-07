@@ -39,6 +39,9 @@ build-backend = "setuptools.build_meta"
 where =["src"]
 include = ["hotel_reservations"]
 
+[tool.setuptools.package-data]
+"hotel_reservations" = ["data/*"]
+
 [tool.setuptools.dynamic]
 version = { file = "version.txt" }
 
