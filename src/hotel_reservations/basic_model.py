@@ -1,6 +1,7 @@
 """Basic Model implementation."""
 
 import mlflow
+import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier
 from loguru import logger
@@ -27,6 +28,7 @@ class BasicModel:
     """
 
     def __init__(self, config: Config, tag: Tag) -> None:
+        # default initializations
         self.config = config
         self.tags = tag.model_dump()
 
@@ -37,7 +39,10 @@ class BasicModel:
         self.parameters = self.config.parameters
         self.catalog_name = self.config.catalog_name
         self.schema_name = self.config.schema_name
+
         self.experiment_name = self.config.experiment_name
+        self.model_name = self.config.model.name
+        self.model_artifact_path = self.config.model.artifact_path
 
     def load_data(self) -> None:
         """Load training and test data from Databricks tables.
@@ -133,10 +138,11 @@ class BasicModel:
 
             mlflow.sklearn.log_model(
                 sk_model=self.pipeline,
-                artifact_path="lightgbm-pipeline-model",
+                artifact_path=self.model_artifact_path,  # "lightgbm-pipeline-model",
                 signature=signature,
             )
-        logger.info("Model logged successfully.")
+
+        logger.info(f"✅ Model logged successfully to {self.model_artifact_path}.")
 
     def register_model(self) -> None:
         """Register the model in UC and set the latest version alias.
@@ -146,16 +152,18 @@ class BasicModel:
         """
         logger.info("Registering the model in UC")
         registered_model = mlflow.register_model(
-            model_uri=f"runs:/{self.run_id}/lightgbm-pipeline-model",
-            name=f"{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic",
+            model_uri=f"runs:/{self.run_id}/{self.model_artifact_path}",  # lightgbm-pipeline-model",
+            name=f"{self.catalog_name}.{self.schema_name}.{self.model_name}",  # hotel_reservations_model_basic",
             tags=self.tags,
         )
-        logger.info(f"✅ Model registered as version {registered_model.version}.")
+        logger.info(f"✅ Model '{registered_model.name}' registered as version {registered_model.version}.")
+
         latest_version = registered_model.version
 
         client = MlflowClient()
         client.set_registered_model_alias(
-            name=f"{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic",
+            # name=f"{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic", # noqa
+            name=registered_model.name,
             alias="latest-model",
             version=latest_version,
         )
@@ -186,7 +194,7 @@ class BasicModel:
         logger.info("Dataset metadata retrieved")
         return metrics, params
 
-    def load_latest_model_and_predict(self, input_data: pd.DataFrame) -> pd.Series:
+    def load_latest_model_and_predict(self, input_data: pd.DataFrame) -> np.ndarray:
         """Load the latest model from MLflow and make predictions.
 
         This function retrieves the most recent model from MLflow, loads it,
@@ -197,7 +205,8 @@ class BasicModel:
         """
         logger.info("Loading latest model from Mlflow and making predictions")
 
-        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic@latest-model"
+        # model_uri = f"models:/{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic@latest-model" # noqa
+        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
         model = mlflow.sklearn.load_model(model_uri)
 
         logger.info("Model loaded succesfully.")

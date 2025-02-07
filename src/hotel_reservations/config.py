@@ -25,6 +25,18 @@ class Tag(BaseModel):
     branch: str
 
 
+class Model(BaseModel):
+    """Represents a model with a name and artifact path.
+
+    This class inherits from BaseModel and defines two attributes.
+    :param name: The name of the model.
+    :param artifact_path: The path to the model artifact.
+    """
+
+    name: str
+    artifact_path: str
+
+
 class NumFeature(BaseModel):
     """A class representing a numerical feature.
 
@@ -78,10 +90,15 @@ class Feature(BaseModel):
 class Config(BaseModel):
     """A class representing a configuration schema.
 
+    :param experiment_name: The name of the experiment.
+    :param catalog_name: The name of the catalog.
     :param schema_name: The name of the schema.
+    :param parameters: Parameters for model training.
     :param num_features: A list of numerical features.
     :param cat_features: An optional list of categorical features.
     :param target: The target feature.
+    :param features: The features.
+    :param model: The model.
     """
 
     experiment_name: str
@@ -92,6 +109,7 @@ class Config(BaseModel):
     cat_features: list[CatFeature] | None = Field(default_factory=list)
     target: Target
     features: Feature
+    model: Model
 
     @classmethod
     def from_yaml(cls, config_file: str) -> Config:

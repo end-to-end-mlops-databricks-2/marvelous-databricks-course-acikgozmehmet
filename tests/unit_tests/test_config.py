@@ -18,6 +18,11 @@ def config(tmp_path_factory: pytest.TempPathFactory) -> Config:
 catalog_name: my_catalog
 schema_name: default
 experiment_name: /Shared/my_experiment
+
+model:
+  name: hotel_reservations_model
+  artifact_path: lightgbm-pipeline-model
+
 parameters:
     random_state: 42
 

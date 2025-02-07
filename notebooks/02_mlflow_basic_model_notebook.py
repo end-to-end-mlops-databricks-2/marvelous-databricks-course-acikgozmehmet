@@ -1,6 +1,7 @@
 # Databricks notebook source
 
 !pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
+
 # COMMAND ----------
 
 %restart_python
@@ -53,6 +54,7 @@ CONFIG = Config.from_yaml(CONFIG_FILE_PATH)
 tags = Tag(branch="dev")
 
 # COMMAND ----------
+
 mlflow.set_tracking_uri("databricks")
 mlflow.set_registry_uri("databricks-uc")
 
