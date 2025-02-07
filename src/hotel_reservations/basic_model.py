@@ -107,7 +107,7 @@ class BasicModel:
 
         This method sets up an MLflow experiment, evaluates the model, and logs relevant information.
         """
-        # mlflow.set_experiment(self.experiment_name)  # noqa
+        mlflow.set_experiment(self.experiment_name)  # noqa
         with mlflow.start_run(tags=self.tags) as run:
             self.run_id = run.info.run_id
 
