@@ -57,7 +57,7 @@ mlflow.set_tracking_uri("databricks")
 mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
-basic_model = BasicModel(config=CONFIG, tags=tags)
+basic_model = BasicModel(config=CONFIG, tag=tags)
 
 
 # COMMAND ----------
