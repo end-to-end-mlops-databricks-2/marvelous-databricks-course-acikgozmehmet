@@ -146,7 +146,7 @@ class BasicModel:
         """
         logger.info("Registering the model in UC")
         registered_model = mlflow.register_model(
-            model_uri=f"runs:/{self.run_id}/lighgbm-pipeline-model",
+            model_uri=f"runs:/{self.run_id}/lightgbm-pipeline-model",
             name=f"{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic",
             tags=self.tags,
         )
