@@ -24,6 +24,9 @@ from hotel_reservations.basic_model import BasicModel
 print(__version__)
 # COMMAND ----------
 
+mlflow.set_tracking_uri("databricks")
+mlflow.set_registry_uri("databricks-uc")
+
 
 # COMMAND ----------
 envfile_path=pathlib.Path().joinpath("../project.env").resolve().as_posix()
@@ -53,10 +56,6 @@ print(f"{CONFIG_FILE_PATH = }")
 CONFIG = Config.from_yaml(CONFIG_FILE_PATH)
 tags = Tag(branch="dev")
 
-# COMMAND ----------
-
-mlflow.set_tracking_uri("databricks")
-mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
 basic_model = BasicModel(config=CONFIG, tag=tags)
@@ -73,9 +72,11 @@ basic_model.train()
 basic_model.log_model()
 
 # COMMAND ----------
-run_id = mlflow.search_runs(experiment_names=["/Shared/hotel-reservations-basic"], filter_string="tags.branch='dev'").run_id[0]
+# run_id = mlflow.search_runs(experiment_names=["/Shared/hotel-reservations-basic"], filter_string="tags.branch='dev'").run_id[0]
+run_id = mlflow.search_runs(experiment_names=[CONFIG.experiment_name], filter_string="tags.branch='dev'").run_id[0]
 
-model= mlflow.sklearn.load_model(f'runs:/{run_id}/lightgbm-pipeline-model')
+# model= mlflow.sklearn.load_model(f'runs:/{run_id}/lightgbm-pipeline-model')
+model= mlflow.sklearn.load_model(f'runs:/{run_id}/{CONFIG.model.artifact_path}')
 
 # COMMAND ----------
 basic_model.retrieve_current_run_dataset()
