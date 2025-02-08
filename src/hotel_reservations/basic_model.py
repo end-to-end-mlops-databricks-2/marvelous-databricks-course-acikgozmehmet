@@ -43,7 +43,7 @@ class BasicModel:
         self.experiment_name = self.config.experiment_name
         self.model_name = self.config.model.name
         self.model_artifact_path = self.config.model.artifact_path
-        
+
         mlflow.set_experiment(self.experiment_name)
         self.experiment = mlflow.get_experiment_by_name(self.experiment_name)
 
