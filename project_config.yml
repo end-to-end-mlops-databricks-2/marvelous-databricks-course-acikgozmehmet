@@ -1,10 +1,10 @@
 catalog_name: mlops_dev
 schema_name: acikgozm
-experiment_name: /Shared/hotel-reservations-basic-2
+experiment_name: /Shared/hotel-reservations-basic
 
 model:
-  name: hotel_reservations_model_basic_2
-  artifact_path: lightgbm-pipeline-model-2
+  name: hotel_reservations_model_basic
+  artifact_path: lightgbm-pipeline-model
 
 parameters:
   learning_rate: 0.02

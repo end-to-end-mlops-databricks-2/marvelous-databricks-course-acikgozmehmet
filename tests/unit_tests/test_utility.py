@@ -142,7 +142,7 @@ def test_normalize_arrival_date() -> None:
     assert all(data_df["arrival"] == expected_results), "The complex_function did not produce the expected results"
 
 
-@pytest.mark.skipif(not is_databricks(), reason="Only on Databricks")
+@pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
 def test_get_delta_table_version() -> None:
     """Test the get_delta_table_version function.
 

@@ -40,7 +40,7 @@ def test__load_data_file_not_found() -> None:
         _ = DataLoader(filepath=data_filepath.as_posix(), config=config)
 
 
-@pytest.mark.skipif(not is_databricks(), reason="Only on Databricks")
+@pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
 def test__load_data_path_not_found() -> None:
     """Test that a FileNotFoundError is raised when the data file is not found.
 
