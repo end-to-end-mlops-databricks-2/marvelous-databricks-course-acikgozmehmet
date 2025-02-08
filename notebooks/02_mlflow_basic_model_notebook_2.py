@@ -4,22 +4,19 @@
 
 # COMMAND ----------
 
-%restart_python
+dbutils.library.restartPython()
 
 # COMMAND ----------
-from hotel_reservations import __version__
-print(__version__)
-
 import mlflow
 import os
 import pathlib
 from dotenv import load_dotenv
-from hotel_reservations import __version__
-from hotel_reservations.config import Config, Tag
 
+from hotel_reservations.config import Config, Tag
 from hotel_reservations.utility import setup_logging
 from hotel_reservations.utility import is_databricks
 from hotel_reservations.basic_model import BasicModel
+from hotel_reservations import __version__
 
 print(__version__)
 # COMMAND ----------
@@ -45,11 +42,9 @@ setup_logging(TRAINING_LOGS)
 
 # COMMAND ----------
 if is_databricks():
-    # DATABRICKS_FILE_PATH = os.environ["DATA_FILEPATH_DATABRICKS"]
     CONFIG_FILE_PATH = pathlib.Path("../project_config.yml").resolve().as_posix()
 
 
-# print(f"{DATABRICKS_FILE_PATH = }")
 print(f"{CONFIG_FILE_PATH = }")
 
 # COMMAND ----------
@@ -60,7 +55,6 @@ tags = Tag(branch="dev")
 # COMMAND ----------
 basic_model = BasicModel(config=CONFIG, tag=tags)
 
-
 # COMMAND ----------
 
 basic_model.load_data()
@@ -69,20 +63,24 @@ basic_model.prepare_features()
 # COMMAND ----------
 
 basic_model.train()
-basic_model.log_model()
 
 # COMMAND ----------
-# run_id = mlflow.search_runs(experiment_names=["/Shared/hotel-reservations-basic"], filter_string="tags.branch='dev'").run_id[0]
-run_id = mlflow.search_runs(experiment_names=[CONFIG.experiment_name], filter_string="tags.branch='dev'").run_id[0]
+basic_model.log_model()
 
-# model= mlflow.sklearn.load_model(f'runs:/{run_id}/lightgbm-pipeline-model')
+
+# COMMAND ----------
+run_id = mlflow.search_runs(experiment_names=[CONFIG.experiment_name], filter_string="tags.branch='dev'").run_id[0]
+print(f'{run_id = }')
+
 model= mlflow.sklearn.load_model(f'runs:/{run_id}/{CONFIG.model.artifact_path}')
 
 # COMMAND ----------
-basic_model.retrieve_current_run_dataset()
+current_run_dataset=basic_model.retrieve_current_run_dataset()
+current_run_dataset
 
 # COMMAND ----------
-basic_model.retrieve_current_run_metadata()
+current_run_metadata = basic_model.retrieve_current_run_metadata()
+current_run_metadata
 
 # COMMAND ----------
 basic_model.register_model()
@@ -93,6 +91,9 @@ test_set = spark.table(f'{CONFIG.catalog_name}.{CONFIG.schema_name}.test_set').l
 X_test = test_set.drop(CONFIG.target.alias).toPandas()
 # COMMAND ----------
 predictions_df = basic_model.load_latest_model_and_predict(X_test)
+# COMMAND ----------
+display(predictions_df)
+
 # COMMAND ----------
 # %sql
 # DROP TABLE IF EXISTS mlops_dev.acikgozm.extra_set
