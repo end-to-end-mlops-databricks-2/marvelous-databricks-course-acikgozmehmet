@@ -43,7 +43,9 @@ class BasicModel:
         self.experiment_name = self.config.experiment_name
         self.model_name = self.config.model.name
         self.model_artifact_path = self.config.model.artifact_path
+        
         mlflow.set_experiment(self.experiment_name)
+        self.experiment = mlflow.get_experiment_by_name(self.experiment_name)
 
     def load_data(self) -> None:
         """Load training and test data from Databricks tables.
@@ -107,9 +109,13 @@ class BasicModel:
 
         This method sets up an MLflow experiment, evaluates the model, and logs relevant information.
         """
-        mlflow.set_experiment(self.experiment_name)  # noqa
-        with mlflow.start_run(tags=self.tags) as run:
+        # mlflow.set_experiment(self.experiment_name)  # noqa
+        experiment_id = self.experiment.experiment_id
+        logger.info(f"Current experiment_id is {experiment_id}")
+        with mlflow.start_run(experiment_id, tags=self.tags) as run:
             self.run_id = run.info.run_id
+
+            logger.info(f"Current run_id {self.run_id}")
 
             y_pred = self.pipeline.predict(self.X_test)
 

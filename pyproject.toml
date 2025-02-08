@@ -74,3 +74,10 @@ lint.ignore = [
 [tool.ruff.format]
 indent-style = "space"
 docstring-code-format = true
+
+# [tool.ruff.pydocstyle]
+# convention = "google"
+# # convention = "sphinx"
+
+# [tool.ruff.lint.pydocstyle]
+# convention = "sphinx"

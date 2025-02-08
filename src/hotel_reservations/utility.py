@@ -87,27 +87,6 @@ def normalize_arrival_date(row: dict[str, Any]) -> datetime.date:
     return to_valid_date(row["arrival_year"], row["arrival_month"], row["arrival_date"])
 
 
-def get_delta_table_version1(table_path: str, spark: SparkSession | None = None) -> int:
-    """Get the latest version of a Delta table.
-
-    This function retrieves the most recent version number of a specified Delta table.
-
-    :param table_path: The path to the Delta table in Databricks.
-    :param spark: An optional SparkSession. If not provided, the function will try to get the active session.
-    :return: The latest version number of the Delta table.
-    """
-    if spark is None:
-        spark = SparkSession.builder.getOrCreate()
-
-    # delta_table = DeltaTable.forPath(spark, table_path) # noqa
-    delta_table = DeltaTable.forName(spark, table_path)
-
-    history = delta_table.history()
-    latest_version = history.select("version").first()[0]
-
-    return latest_version
-
-
 def get_delta_table_version(
     catalog_name: str, schema_name: str, table_name: str, spark: SparkSession | None = None
 ) -> int:

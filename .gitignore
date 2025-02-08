@@ -103,3 +103,5 @@ databricks.yml
 uv.lock
 tests/**/*.whl
 src/**/commit_sha.txt
+
+.databricks
