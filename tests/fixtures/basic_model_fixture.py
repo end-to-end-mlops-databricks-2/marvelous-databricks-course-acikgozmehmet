@@ -4,11 +4,10 @@ import mlflow
 import mlflow.entities
 import pytest
 from dotenv import load_dotenv
-from mlflow.entities import Experiment
-from mlflow.tracking import MlflowClient
 
 from hotel_reservations.basic_model import BasicModel
 from hotel_reservations.config import Config, Tags
+from src.hotel_reservations.tracking import validate_experiment_deleted
 from tests.consts import PROJECT_DIR
 
 
@@ -38,19 +37,6 @@ def basic_model() -> BasicModel:
     tags = Tags(branch="testing")
     basic_model = BasicModel(config=config, tags=tags)
     return basic_model
-
-
-def validate_experiment_deleted(experiment: Experiment) -> None:
-    """Validate that an experiment has been deleted.
-
-    Searches for active experiments with the given name and asserts that none are found.
-
-    :param experiment: The experiment to validate as deleted
-    """
-    client = MlflowClient()
-    # Search for active experiments with the given name
-    active_experiments = client.search_experiments(filter_string=f"name = '{experiment.name}'")
-    assert not active_experiments
 
 
 @pytest.fixture(scope="function")

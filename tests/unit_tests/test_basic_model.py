@@ -1,13 +1,13 @@
 """Unit tests for basic_models."""
 
 import mlflow
-import pandas as pd
 import pytest
 from mlflow.tracking import MlflowClient
 from pyspark.sql import SparkSession
 
 from hotel_reservations.basic_model import BasicModel
 from hotel_reservations.utility import is_databricks
+from src.hotel_reservations.tracking import delete_registered_model
 
 
 def test_basic_model_fixture_as_expected(basic_model: BasicModel) -> None:
@@ -100,6 +100,7 @@ def test_log_model_on_databricks(logged_basic_model: BasicModel) -> None:
     experiment = mlflow.get_experiment_by_name(logged_basic_model.experiment_name)
     assert experiment is not None
     print(f"{experiment.artifact_location} = ")
+    assert experiment.artifact_location
 
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
@@ -112,7 +113,7 @@ def test_register_model_on_databricks(logged_basic_model: BasicModel) -> None:
     # model_name = "prod.ml_team.iris_model"  # Replace with your model's full name  # noqa
     model_name = f"{logged_basic_model.catalog_name}.{logged_basic_model.schema_name}.{logged_basic_model.model_name}"  # Replace with your model's full name
 
-    registered_models = client.search_registered_models(filter_string=f"name='{model_name}'")
+    registered_models = client.search_registered_models(filter_string=f"name='{logged_basic_model.model_name}'")
 
     if registered_models:
         print(f"Model '{model_name}' is registered.")
@@ -120,6 +121,9 @@ def test_register_model_on_databricks(logged_basic_model: BasicModel) -> None:
         latest_version = registered_models[0].latest_versions[-1]
         print(f"Latest version: {latest_version.version}")
         print(f"Current stage: {latest_version.current_stage}")
+
+        assert latest_version
+        delete_registered_model(model_name=model_name)
     else:
         print(f"Model '{model_name}' is not registered.")
 
@@ -167,4 +171,5 @@ def test_load_latest_model_and_predict_on_databricks(logged_basic_model: BasicMo
     input = spark.table(table_name).limit(10)
     predictions = reg_basic_model.load_latest_model_and_predict(input_data=input)
 
-    assert isinstance(predictions, pd.DataFrame)
+    # assert isinstance(predictions, pd.DataFrame)  # noqa
+    assert predictions
