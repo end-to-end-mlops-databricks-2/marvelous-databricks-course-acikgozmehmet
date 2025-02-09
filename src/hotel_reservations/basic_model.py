@@ -30,7 +30,8 @@ class BasicModel:
     def __init__(self, config: Config, tag: Tag) -> None:
         # default initializations
         self.config = config
-        self.tags = tag.model_dump()
+        # self.tags = tag.model_dump()
+        self.tags = tag.to_dict()
 
         # Initilization settings from config
         self.num_features = self.config.features.numerical
