@@ -2,12 +2,11 @@
 
 import mlflow
 import pytest
-from mlflow.tracking import MlflowClient
 from pyspark.sql import SparkSession
 
 from hotel_reservations.basic_model import BasicModel
 from hotel_reservations.utility import is_databricks
-from src.hotel_reservations.tracking import delete_registered_model
+from src.hotel_reservations.tracking import delete_registered_model, search_registered_model_versions
 
 
 def test_basic_model_fixture_as_expected(basic_model: BasicModel) -> None:
@@ -109,25 +108,22 @@ def test_register_model_on_databricks(logged_basic_model: BasicModel) -> None:
     # experiment = mlflow.get_experiment_by_name(logged_basic_model.experiment_name) # noqa
     logged_basic_model.register_model()
 
-    client = MlflowClient()
-    # model_name = "prod.ml_team.iris_model"  # Replace with your model's full name  # noqa
     model_name = f"{logged_basic_model.catalog_name}.{logged_basic_model.schema_name}.{logged_basic_model.model_name}"  # Replace with your model's full name
-
-    registered_models = client.search_registered_models(filter_string=f"name='{logged_basic_model.model_name}'")
+    registered_models = search_registered_model_versions(full_model_name=model_name)
+    assert registered_models
 
     if registered_models:
         print(f"Model '{model_name}' is registered.")
-        # You can access more details about the model here
-        latest_version = registered_models[0].latest_versions[-1]
-        print(f"Latest version: {latest_version.version}")
-        print(f"Current stage: {latest_version.current_stage}")
+        for mv in registered_models:
+            print(f"Name: {mv.name}")
+            print(f"Version: {mv.version}")
+            print(f"Stage: {mv.current_stage}")
+            print(f"Description: {mv.description}")
 
-        assert latest_version
+        # delete the mess
         delete_registered_model(model_name=model_name)
     else:
         print(f"Model '{model_name}' is not registered.")
-
-    # client.delete_registered_model(name=model_name) #  noqa
 
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
@@ -168,8 +164,16 @@ def test_load_latest_model_and_predict_on_databricks(logged_basic_model: BasicMo
     table_name = f"{reg_basic_model.catalog_name}.{reg_basic_model.schema_name}.test_set"
 
     spark = SparkSession.builder.getOrCreate()
-    input = spark.table(table_name).limit(10)
+    input = spark.table(table_name).limit(10).drop(logged_basic_model.target).toPandas()
     predictions = reg_basic_model.load_latest_model_and_predict(input_data=input)
 
-    # assert isinstance(predictions, pd.DataFrame)  # noqa
-    assert predictions
+    print(f"{predictions = }")
+    assert len(predictions) > 0
+    assert len(predictions) == 10
+
+    #  clean up the mess
+    model_name = f"{logged_basic_model.catalog_name}.{logged_basic_model.schema_name}.{logged_basic_model.model_name}"  # Replace with your model's full name
+    registered_models = search_registered_model_versions(full_model_name=model_name)
+
+    if registered_models:
+        delete_registered_model(model_name=model_name)

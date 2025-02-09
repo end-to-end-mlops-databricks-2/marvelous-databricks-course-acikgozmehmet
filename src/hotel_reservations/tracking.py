@@ -3,6 +3,7 @@
 import pytest
 from mlflow.entities import Experiment
 from mlflow.exceptions import MlflowException
+from mlflow.store.entities.paged_list import PagedList
 from mlflow.tracking import MlflowClient
 
 
@@ -41,3 +42,26 @@ def delete_registered_model(model_name: str) -> None:
     client = MlflowClient()
     client.delete_registered_model(name=model_name)
     assert_registered_model_deleted(model_name=model_name)
+
+
+def search_registered_model_versions(full_model_name: str) -> PagedList:
+    """Search for registered model versions using the provided model name.
+
+    This function uses the MlflowClient to search for model versions and prints details of each version found.
+
+    :param full_model_name: The full name of the model to search for
+    :return: A PagedList of model versions matching the search criteria
+    """
+    client = MlflowClient()
+    model_name = full_model_name
+
+    model_versions = client.search_model_versions(f"name='{model_name}'")
+    if model_versions:
+        # Search for a specific model by name
+        for mv in model_versions:
+            print(f"Name: {mv.name}")
+            print(f"Version: {mv.version}")
+            print(f"Stage: {mv.current_stage}")
+            print(f"Description: {mv.description}")
+
+    return model_versions
