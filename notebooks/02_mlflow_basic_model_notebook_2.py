@@ -4,7 +4,7 @@
 
 # COMMAND ----------
 
-dbutils.library.restartPython()
+%restart_python
 
 # COMMAND ----------
 import mlflow
