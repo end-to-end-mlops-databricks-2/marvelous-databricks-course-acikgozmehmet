@@ -2,7 +2,7 @@
 
 import pytest
 
-from hotel_reservations.config import Config, Tag
+from hotel_reservations.config import Config, Tags
 
 
 @pytest.fixture(scope="module")
@@ -117,6 +117,6 @@ def test_create_tag() -> None:
 
     :param config: The Config object containing target configuration.
     """
-    tags = Tag(branch="test")
+    tags = Tags(branch="test")
     assert tags.git_sha
     assert tags.branch == "test"

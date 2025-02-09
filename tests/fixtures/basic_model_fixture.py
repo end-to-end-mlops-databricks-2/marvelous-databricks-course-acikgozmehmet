@@ -5,7 +5,7 @@ import pytest
 from dotenv import load_dotenv
 
 from hotel_reservations.basic_model import BasicModel
-from hotel_reservations.config import Config, Tag
+from hotel_reservations.config import Config, Tags
 from tests.consts import PROJECT_DIR
 
 
@@ -32,8 +32,8 @@ def basic_model() -> BasicModel:
     config.model.name = config.model.name + "_testing"
     config.model.artifact_path = config.model.artifact_path + "-testing"
 
-    tags = Tag(branch="testing")
-    basic_model = BasicModel(config=config, tag=tags)
+    tags = Tags(branch="testing")
+    basic_model = BasicModel(config=config, tags=tags)
     return basic_model
 
 

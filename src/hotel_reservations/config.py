@@ -15,7 +15,7 @@ from pydantic import (
 from hotel_reservations.utility import get_current_git_sha
 
 
-class Tag(BaseModel):
+class Tags(BaseModel):
     """Represents a tag in a version control system.
 
     Contains information about the git SHA and branch associated with the tag.

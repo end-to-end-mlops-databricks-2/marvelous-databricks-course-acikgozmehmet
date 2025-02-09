@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
-from hotel_reservations.config import Config, Tag
+from hotel_reservations.config import Config, Tags
 from hotel_reservations.utility import get_delta_table_version, is_databricks
 
 if is_databricks():
@@ -27,11 +27,11 @@ class BasicModel:
     :param name: The name of the model.
     """
 
-    def __init__(self, config: Config, tag: Tag) -> None:
+    def __init__(self, config: Config, tags: Tags) -> None:
         # default initializations
         self.config = config
-        # self.tags = tag.model_dump()
-        self.tags = tag.to_dict()
+        self.tags = tags.model_dump()  # noqa
+        # self.tags = tags.dict()  # noqa
 
         # Initilization settings from config
         self.num_features = self.config.features.numerical
