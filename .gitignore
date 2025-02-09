@@ -107,3 +107,4 @@ src/**/commit_sha.txt
 .databricks
 payload/**
 mlruns/**
+tests/unit_tests/sakla.zip
