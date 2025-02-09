@@ -12,7 +12,7 @@ import os
 import pathlib
 from dotenv import load_dotenv
 
-from hotel_reservations.config import Config, Tag
+from hotel_reservations.config import Config, Tags
 from hotel_reservations.utility import setup_logging
 from hotel_reservations.utility import is_databricks
 from hotel_reservations.basic_model import BasicModel
@@ -49,11 +49,11 @@ print(f"{CONFIG_FILE_PATH = }")
 
 # COMMAND ----------
 CONFIG = Config.from_yaml(CONFIG_FILE_PATH)
-tags = Tag(branch="dev")
+tags = Tags(branch="dev")
 
 
 # COMMAND ----------
-basic_model = BasicModel(config=CONFIG, tag=tags)
+basic_model = BasicModel(config=CONFIG, tags=tags)
 
 # COMMAND ----------
 
