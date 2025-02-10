@@ -50,7 +50,7 @@ uv lock
 
 Overall, it is a comprehensive data preparation pipeline for hotel reservation data, emphasizing data quality, flexibility, and compatibility with both local and cloud-based (Databricks) environments.
 
-### Model Training & Registration 
+### Model Training & Registration
 
 #### Basic Model
 
