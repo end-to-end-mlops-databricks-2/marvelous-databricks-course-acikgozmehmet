@@ -7,12 +7,11 @@ import mlflow
 import numpy as np
 import pandas as pd
 from loguru import logger
-from mlflow.data.dataset_source import DatasetSource
+from mlflow import MlflowClient, register_model
 from mlflow.models import infer_signature
 from mlflow.utils.environment import _mlflow_conda_env
 
 from hotel_reservations.config import Config, Tags
-from tests.consts import PROJECT_DIR
 
 # model_file, model_path, model_file_path
 # https://www.perplexity.ai/search/you-are-an-expert-on-mlflow-wi-qG83lj2oSISJCB12sMsHKQ
@@ -64,14 +63,14 @@ class CustomModel:
         # initialize from config
         self.catalog_name = self.config.catalog_name
         self.schema_name = self.config.schema_name
-        self.experiment_name = self.config.experiment_name_custom
+        self.experiment_name = self.config.experiment_name
         self.model_name = self.config.model.name
         self.model_artifact_path = self.config.model.artifact_path
 
         # disable autologging in order not to have multiple experiments and runs :)
         mlflow.autolog(disable=True)
 
-    def log_model(self) -> None:
+    def log_model(self, model_input: pd.DataFrame, model_output: pd.DataFrame) -> None:
         """Log model."""
         mlflow.set_experiment(self.experiment_name)
 
@@ -85,16 +84,13 @@ class CustomModel:
             self.run_id = run.info.run_id
 
             #  work around
-            TRAIN_TEST_PRED_FOLDER = PROJECT_DIR / "tests" / "test_data" / "train_test_pred"
-            xtrain = pd.read_csv((TRAIN_TEST_PRED_FOLDER / "xtrain.csv").resolve().as_posix())
-            ypred = pd.read_csv((TRAIN_TEST_PRED_FOLDER / "ypred.csv").resolve().as_posix())
 
             # Log the model
-            signature = infer_signature(model_input=xtrain, model_output=ypred)
+            signature = infer_signature(model_input=model_input, model_output=model_output)
 
             # dataset = mlflow.data.  #  noqa
-            dataset = mlflow.data.from_pandas(xtrain, (TRAIN_TEST_PRED_FOLDER / "xtrain.csv").resolve().as_posix())
-            mlflow.log_input(dataset, context="training")
+            # dataset = mlflow.data.from_pandas(xtrain, (TRAIN_TEST_PRED_FOLDER / "xtrain.csv").resolve().as_posix())  # noqa
+            # mlflow.log_input(dataset, context="training") #  noqa
 
             conda_env = _mlflow_conda_env(additional_pip_deps=additional_pip_deps)
 
@@ -104,30 +100,27 @@ class CustomModel:
                 code_path=self.code_paths,
                 conda_env=conda_env,
                 signature=signature,
-                input_example=xtrain.head(4),
+                input_example=model_input.head(4),
             )
 
         logger.info(f"✅ Model logged successfully to {self.model_artifact_path}.")
 
     def register_model(self) -> None:
         """Register."""
-        raise NotImplementedError()
+        logger.info("🔄 Registering the model in UC...")
+        registered_model = mlflow.register_model(
+            model_uri=f"runs:/{self.run_id}/{self.model_artifact_path}",
+            name=f"{self.catalog_name}.{self.schema_name}.{self.model_name}",
+            description="Custom model for hotel reservations",
+            tags=self.tags,
+        )
 
-    def retrieve_current_run_dataset(self) -> DatasetSource:
-        """Retrieve MLflow run dataset."""
-        run = mlflow.get_run(self.run_id)
-        dataset_info = run.inputs.dataset_inputs[0].dataset
-        dataset_source = mlflow.data.get_source(dataset_info)
-        return dataset_source.load()
-        logger.info("✅ Dataset source loaded.")
+        logger.info(f"✅ Model registered as version {registered_model.version}.")
 
-    def retrieve_current_run_metadata(self) -> tuple[dict, dict]:
-        """Retrieve MLflow run metadata."""
-        run = mlflow.get_run(self.run_id)
-        metrics = run.data.to_dictionary()["metrics"]
-        params = run.data.to_dictionary()["params"]
-        return metrics, params
-        logger.info("✅ Dataset metadata loaded.")
+        latest_version = register_model.version
+        client = MlflowClient()
+        client.set_registered_model_alias(name=registered_model.name, alias="latest-model", version=latest_version)
+        logger.info("✅ An alias is set to the custom model.")
 
     def load_latest_model_and_predict(self, input_data: pd.DataFrame) -> Union[pd.DataFrame, np.array]:  #  noqa
         """Load latest."""
