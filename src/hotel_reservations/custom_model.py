@@ -56,7 +56,7 @@ class CustomModel:
 
     def __init__(self, config: Config, tags: Tags, model: object, code_paths: list[str]) -> None:
         self.config = config
-        self.tags = tags
+        self.tags = tags.model_dump()
         self.model = ModelWrapper(model)
         self.code_paths = code_paths
 

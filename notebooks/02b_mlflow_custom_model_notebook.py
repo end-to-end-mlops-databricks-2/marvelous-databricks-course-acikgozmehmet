@@ -17,7 +17,6 @@ import pandas as pd
 from hotel_reservations.config import Config, Tags
 from hotel_reservations.utility import setup_logging
 from hotel_reservations.utility import is_databricks
-from hotel_reservations.basic_model import BasicModel
 from hotel_reservations.custom_model import CustomModel, load_model
 from hotel_reservations import __version__
 
