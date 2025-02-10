@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 from hotel_reservations.config import Config, Tags
 from hotel_reservations.custom_model import CustomModel, load_model
+from hotel_reservations.tracking import validate_experiment_deleted
 from tests.consts import PROJECT_DIR
 
 
@@ -73,7 +74,5 @@ def logged_custom_model(custom_model: CustomModel) -> CustomModel:
     experiment = mlflow.get_experiment_by_name(custom_model.experiment_name)
     assert experiment is not None
 
-    print(f"{experiment.artifact_location} = ")
-
-    # mlflow.delete_experiment(experiment.experiment_id)  # noqa
-    # validate_experiment_deleted(experiment)   # noqa
+    mlflow.delete_experiment(experiment.experiment_id)  # noqa
+    validate_experiment_deleted(experiment)  # noqa

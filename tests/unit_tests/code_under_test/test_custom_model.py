@@ -8,7 +8,7 @@ from loguru import logger
 
 from hotel_reservations.config import Config
 from hotel_reservations.custom_model import CustomModel, ModelWrapper, load_model
-from hotel_reservations.tracking import search_registered_model_versions
+from hotel_reservations.tracking import delete_registered_model, search_registered_model_versions
 from hotel_reservations.utility import is_databricks
 from tests.consts import PROJECT_DIR
 
@@ -89,7 +89,9 @@ def test_custom_model_register_success(logged_custom_model: CustomModel) -> None
     # experiment = mlflow.get_experiment_by_name(logged_basic_model.experiment_name) # noqa
     logged_custom_model.register_model()
 
-    model_name = f"{logged_custom_model.catalog_name}.{logged_custom_model.schema_name}.{logged_custom_model.model_name}"  # Replace with your model's full name
+    model_name = (
+        f"{logged_custom_model.catalog_name}.{logged_custom_model.schema_name}.{logged_custom_model.model_name}"
+    )
     registered_models = search_registered_model_versions(full_model_name=model_name)
     assert registered_models
 
@@ -102,14 +104,22 @@ def test_custom_model_register_success(logged_custom_model: CustomModel) -> None
             logger.info(f"Description: {mv.description}")
 
         # delete the mess
-        # delete_registered_model(model_name=model_name)  # noqa
+        delete_registered_model(model_name=model_name)  # noqa
     else:
         logger.info(f"Model '{model_name}' is not registered.")
 
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
 def test_load_latest_model_and_predict_on_databricks(logged_custom_model: CustomModel) -> None:
-    """Test load_latest_model_and_predict."""
+    """Test the `load_latest_model_and_predict` method on Databricks.
+
+    This function registers a model, loads the latest version of the model,
+    makes predictions on test input data, and validates the predictions.
+    It also cleans up registered models after the test.
+
+    :param logged_custom_model: The custom model object to be tested.
+    :type logged_custom_model: CustomModel
+    """
     logged_custom_model.register_model()
     reg_custom_model = logged_custom_model
 
@@ -129,5 +139,5 @@ def test_load_latest_model_and_predict_on_databricks(logged_custom_model: Custom
     )
     registered_models = search_registered_model_versions(full_model_name=model_name)  # noqa
 
-    # if registered_models:
-    #     delete_registered_model(model_name=model_name)  #  noqa
+    if registered_models:
+        delete_registered_model(model_name=model_name)  #  noqa
