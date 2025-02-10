@@ -4,9 +4,11 @@ import mlflow
 import numpy as np
 import pandas as pd
 import pytest
+from loguru import logger
 
 from hotel_reservations.config import Config
 from hotel_reservations.custom_model import CustomModel, ModelWrapper, load_model
+from hotel_reservations.tracking import search_registered_model_versions
 from hotel_reservations.utility import is_databricks
 from tests.consts import PROJECT_DIR
 
@@ -62,7 +64,7 @@ def test_custom_model_init(custom_model: CustomModel) -> None:
 
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
-def test_custom_model_log_model_(logged_custom_model: CustomModel) -> None:
+def test_custom_model_log_model_success(logged_custom_model: CustomModel) -> None:
     """Tests the logging of a custom model using the `CustomModel` class.
 
     This function sets up a custom model configuration, loads a test model,
@@ -74,5 +76,58 @@ def test_custom_model_log_model_(logged_custom_model: CustomModel) -> None:
     # validate the experiment exists and has the expected artifact location
     experiment = mlflow.get_experiment_by_name(logged_custom_model.experiment_name)
     assert experiment is not None
-    print(f"{experiment.artifact_location} = ")
     assert experiment.artifact_location
+
+
+@pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
+def test_custom_model_register_success(logged_custom_model: CustomModel) -> None:
+    """Tests the registration of a custom model using the `CustomModel` class.
+
+    This function sets up a custom model configuration, loads a test model,
+    registers the model, and validates that it is registered.
+    """
+    # experiment = mlflow.get_experiment_by_name(logged_basic_model.experiment_name) # noqa
+    logged_custom_model.register_model()
+
+    model_name = f"{logged_custom_model.catalog_name}.{logged_custom_model.schema_name}.{logged_custom_model.model_name}"  # Replace with your model's full name
+    registered_models = search_registered_model_versions(full_model_name=model_name)
+    assert registered_models
+
+    if registered_models:
+        logger.info(f"Model '{model_name}' is registered.")
+        for mv in registered_models:
+            logger.info(f"Name: {mv.name}")
+            logger.info(f"Version: {mv.version}")
+            logger.info(f"Stage: {mv.current_stage}")
+            logger.info(f"Description: {mv.description}")
+
+        # delete the mess
+        # delete_registered_model(model_name=model_name)  # noqa
+    else:
+        logger.info(f"Model '{model_name}' is not registered.")
+
+
+@pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
+def test_load_latest_model_and_predict_on_databricks(logged_custom_model: CustomModel) -> None:
+    """Test load_latest_model_and_predict."""
+    logged_custom_model.register_model()
+    reg_custom_model = logged_custom_model
+
+    input = pd.read_csv(
+        (PROJECT_DIR / "tests" / "test_data" / "train_test_pred" / "xtest.csv").resolve().as_posix()
+    ).head(10)
+
+    predictions = reg_custom_model.load_latest_model_and_predict(input_data=input)
+
+    logger.info(f"{predictions = }")
+    assert len(predictions) > 0
+    assert len(predictions) == 10
+
+    #  clean up the mess
+    model_name = (
+        f"{logged_custom_model.catalog_name}.{logged_custom_model.schema_name}.{logged_custom_model.model_name}"
+    )
+    registered_models = search_registered_model_versions(full_model_name=model_name)  # noqa
+
+    # if registered_models:
+    #     delete_registered_model(model_name=model_name)  #  noqa
