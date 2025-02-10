@@ -111,7 +111,7 @@ class CustomModel:
         registered_model = mlflow.register_model(
             model_uri=f"runs:/{self.run_id}/{self.model_artifact_path}",
             name=f"{self.catalog_name}.{self.schema_name}.{self.model_name}",
-            description="Custom model for hotel reservations",
+            # description="Custom model for hotel reservations",
             tags=self.tags,
         )
 

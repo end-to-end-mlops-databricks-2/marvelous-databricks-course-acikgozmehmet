@@ -82,7 +82,7 @@ custom_model = CustomModel(config=CONFIG, tags=tags, model=model, code_paths=cod
 # COMMAND ----------
 # We need to provide model_input and model_output to infer_schema
 TRAIN_TEST_PRED_FOLDER =   CURR_DIR / ".." /"tests" /"test_data" / "train_test_pred"
-model_input =pd.read_csv((TRAIN_TEST_PRED_FOLDER / "xtain.csv").resolve().as_posix())
+model_input =pd.read_csv((TRAIN_TEST_PRED_FOLDER / "xtrain.csv").resolve().as_posix())
 model_output = pd.read_csv((TRAIN_TEST_PRED_FOLDER / "ypred.csv").resolve().as_posix())
 
 # COMMAND ----------
