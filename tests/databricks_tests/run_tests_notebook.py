@@ -21,8 +21,7 @@ import pytest
 # wd = os.getcwd()
 wd = pathlib.Path().resolve()
 print(f"Current working directory: {wd}")
-# unit_test_folder = (wd / "../unit_tests").resolve().as_posix()
-unit_test_folder = (wd / "../unit_tests/code_under_test").resolve().as_posix()
+unit_test_folder = (wd / "../unit_tests").resolve().as_posix()
 # COMMAND ----------
 
 try:

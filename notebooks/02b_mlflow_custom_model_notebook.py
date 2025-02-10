@@ -91,32 +91,12 @@ custom_model.log_model(model_input=model_input, model_output=model_output)
 # COMMAND ----------
 custom_model.register_model()
 
-
-# run_id = mlflow.search_runs(experiment_names=[CONFIG.experiment_name], filter_string="tags.branch='dev'").run_id[0]
-# print(f'{run_id = }')
-#
-# model= mlflow.sklearn.load_model(f'runs:/{run_id}/{CONFIG.model.artifact_path}')
-#
-# # COMMAND ----------
-# current_run_dataset=basic_model.retrieve_current_run_dataset()
-# current_run_dataset
-#
-# # COMMAND ----------
-# current_run_metadata = basic_model.retrieve_current_run_metadata()
-# current_run_metadata
-#
-# # COMMAND ----------
-# basic_model.register_model()
-#
-# # COMMAND ----------
-# test_set = spark.table(f'{CONFIG.catalog_name}.{CONFIG.schema_name}.test_set').limit(10)
-# # COMMAND ----------
-# X_test = test_set.drop(CONFIG.target.alias).toPandas()
-# # COMMAND ----------
-# predictions_df = basic_model.load_latest_model_and_predict(X_test)
-# # COMMAND ----------
-# display(predictions_df)
-#
 # COMMAND ----------
-# %sql
-# DROP TABLE IF EXISTS mlops_dev.acikgozm.extra_set
+# predictions
+input = pd.read_csv(
+    (CURR_DIR / ".." / "tests" / "test_data" / "train_test_pred" / "xtest.csv").resolve().as_posix()
+).head(10)
+
+# COMMAND ----------
+predictions = custom_model.load_latest_model_and_predict(input_data=input)
+display(predictions)
