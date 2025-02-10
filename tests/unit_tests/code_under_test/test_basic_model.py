@@ -19,7 +19,7 @@ def test_basic_model_fixture_as_expected(basic_model: BasicModel) -> None:
     assert isinstance(basic_model, BasicModel)
     assert basic_model.config.experiment_name == "/Shared/hotel-reservations-basic-testing"
     assert basic_model.config.model.name == "hotel_reservations_model_basic_testing"
-    assert basic_model.config.model.artifact_path == "lightgbm-pipeline-model-testing"
+    assert basic_model.config.model.artifact_path == "lightgbm-pipeline-model-basic-testing"
     assert basic_model.tags["git_sha"] is not None
     assert basic_model.tags["branch"] == "testing"
 
