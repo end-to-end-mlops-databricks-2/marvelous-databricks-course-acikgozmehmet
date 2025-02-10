@@ -123,4 +123,13 @@ class CustomModel:
 
     def load_latest_model_and_predict(self, input_data: pd.DataFrame) -> Union[pd.DataFrame, np.array]:  #  noqa
         """Load latest."""
-        raise NotImplementedError()
+        logger.info("��� Loading the latest model...")
+
+        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
+        model = mlflow.pyfunc.load_model(model_uri)
+
+        logger.info("�� Model loaded successfully.")
+
+        # make predictions
+        predictions = model.predict(input_data)
+        return predictions
