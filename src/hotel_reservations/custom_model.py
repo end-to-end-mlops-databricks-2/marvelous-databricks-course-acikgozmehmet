@@ -7,7 +7,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 from loguru import logger
-from mlflow import MlflowClient, register_model
+from mlflow import MlflowClient
 from mlflow.models import infer_signature
 from mlflow.utils.environment import _mlflow_conda_env
 
@@ -116,7 +116,7 @@ class CustomModel:
 
         logger.info(f"✅ Model registered as version {registered_model.version}.")
 
-        latest_version = register_model.version
+        latest_version = registered_model.version
         client = MlflowClient()
         client.set_registered_model_alias(name=registered_model.name, alias="latest-model", version=latest_version)
         logger.info("✅ An alias is set to the custom model.")
