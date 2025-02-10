@@ -6,7 +6,7 @@ from pyspark.sql import SparkSession
 
 from hotel_reservations.basic_model import BasicModel
 from hotel_reservations.utility import is_databricks
-from src.hotel_reservations.tracking import delete_registered_model, search_registered_model_versions
+from hotel_reservations.tracking import delete_registered_model, search_registered_model_versions
 
 
 def test_basic_model_fixture_as_expected(basic_model: BasicModel) -> None:
