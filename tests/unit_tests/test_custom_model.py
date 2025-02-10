@@ -14,9 +14,9 @@ from tests.consts import PROJECT_DIR
 
 
 def test_load_model() -> None:
-    """Test the loading of a LightGBM pipeline model.
+    """Test loading a model from a specified file path.
 
-    Ensures that the model is successfully loaded from the specified file path.
+    :raises AssertionError: If the loaded model is None.
     """
     filepath = (PROJECT_DIR / "tests" / "test_data" / "lightgbm-pipeline-model" / "model.pkl").resolve()
     model = load_model(filepath.as_posix())
@@ -24,9 +24,9 @@ def test_load_model() -> None:
 
 
 def test_model_wrapper_init() -> None:
-    """Test the initialization of the ModelWrapper class.
+    """Test initializing the ModelWrapper with a loaded model.
 
-    Ensures that the ModelWrapper class is initialized correctly.
+    :raises AssertionError: If the ModelWrapper instance or its model attribute is None.
     """
     model_path = (PROJECT_DIR / "tests" / "test_data" / "lightgbm-pipeline-model" / "model.pkl").resolve()
     model = load_model(model_path.as_posix())
@@ -36,9 +36,9 @@ def test_model_wrapper_init() -> None:
 
 
 def test_model_wrapper_predict() -> None:
-    """Test the initialization of the ModelWrapper class.
+    """Test the predict method of ModelWrapper.
 
-    Ensures that the ModelWrapper class is initialized correctly.
+    :raises AssertionError: If predictions are not of type numpy.ndarray or do not match the expected shape.
     """
     model_path = (PROJECT_DIR / "tests" / "test_data" / "lightgbm-pipeline-model" / "model.pkl").resolve()
     model = load_model(model_path.as_posix())
@@ -52,11 +52,10 @@ def test_model_wrapper_predict() -> None:
 
 
 def test_custom_model_init(custom_model: CustomModel) -> None:
-    """Test the initialization of the CustomModel class.
+    """Test initializing a CustomModel instance.
 
-    This function verifies that a CustomModel instance is correctly initialized
-    with the provided configuration, tags, model, and code paths. It also ensures
-    that the attributes of the CustomModel instance are of the expected types.
+    :param custom_model: The CustomModel instance to test.
+    :raises AssertionError: If the instance or its attributes are not of expected types.
     """
     assert isinstance(custom_model.config, Config)
     assert isinstance(custom_model, CustomModel)
@@ -65,13 +64,10 @@ def test_custom_model_init(custom_model: CustomModel) -> None:
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
 def test_custom_model_log_model_success(logged_custom_model: CustomModel) -> None:
-    """Tests the logging of a custom model using the `CustomModel` class.
+    """Test logging a custom model to MLflow on Databricks.
 
-    This function sets up a custom model configuration, loads a test model,
-    and validates that the experiment is created with the expected artifact location.
-    It also ensures proper cleanup by deleting the experiment after validation.
-
-    :raises AssertionError: If the experiment is not created or its artifact location is missing.
+    :param logged_custom_model: The logged CustomModel instance to test.
+    :raises AssertionError: If the experiment does not exist or lacks an artifact location.
     """
     # validate the experiment exists and has the expected artifact location
     experiment = mlflow.get_experiment_by_name(logged_custom_model.experiment_name)
@@ -81,12 +77,11 @@ def test_custom_model_log_model_success(logged_custom_model: CustomModel) -> Non
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
 def test_custom_model_register_success(logged_custom_model: CustomModel) -> None:
-    """Tests the registration of a custom model using the `CustomModel` class.
+    """Test registering a custom model in MLflow on Databricks.
 
-    This function sets up a custom model configuration, loads a test model,
-    registers the model, and validates that it is registered.
+    :param logged_custom_model: The logged CustomModel instance to test.
+    :raises AssertionError: If no registered models are found.
     """
-    # experiment = mlflow.get_experiment_by_name(logged_basic_model.experiment_name) # noqa
     logged_custom_model.register_model()
 
     model_name = (
@@ -111,14 +106,11 @@ def test_custom_model_register_success(logged_custom_model: CustomModel) -> None
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
 def test_load_latest_model_and_predict_on_databricks(logged_custom_model: CustomModel) -> None:
-    """Test the `load_latest_model_and_predict` method on Databricks.
+    """Test loading the latest model and making predictions on Databricks.
 
-    This function registers a model, loads the latest version of the model,
-    makes predictions on test input data, and validates the predictions.
-    It also cleans up registered models after the test.
+    This test registers the model, loads it, makes predictions, and then cleans up.
 
-    :param logged_custom_model: The custom model object to be tested.
-    :type logged_custom_model: CustomModel
+    :param logged_custom_model: The custom model to be tested
     """
     logged_custom_model.register_model()
     reg_custom_model = logged_custom_model
