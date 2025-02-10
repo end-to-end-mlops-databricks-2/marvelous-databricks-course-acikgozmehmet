@@ -56,9 +56,9 @@ tags = Tags(branch="dev")
 
 
 # COMMAND ----------
-# some changes on the config file to multi-purpose usage
-CONFIG.experiment_name = CONFIG.experiment_name.replace("-basic","-custom")
-CONFIG.model.name = CONFIG.model.name.replace("_basic","_custom")
+# configuration changed for testing
+CONFIG.experiment_name = CONFIG.experiment_name + "-custom"
+CONFIG.model.name = CONFIG.model.name + "_custom"
 CONFIG.model.artifact_path='custom-model'
 
 logger.info(f"{CONFIG.experiment_name = }")

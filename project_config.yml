@@ -1,9 +1,9 @@
 catalog_name: mlops_dev
 schema_name: acikgozm
-experiment_name: /Shared/hotel-reservations-basic
+experiment_name: /Shared/hotel-reservations
 
 model:
-  name: hotel_reservations_model_basic
+  name: hotel_reservations_model
   artifact_path: lightgbm-pipeline-model
 
 parameters:

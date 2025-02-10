@@ -49,6 +49,9 @@ print(f"{CONFIG_FILE_PATH = }")
 
 # COMMAND ----------
 CONFIG = Config.from_yaml(CONFIG_FILE_PATH)
+# configuration changed for testing
+CONFIG.experiment_name = CONFIG.experiment_name + "-basic"
+CONFIG.model.name = CONFIG.model.name + "_basic"
 tags = Tags(branch="dev")
 
 

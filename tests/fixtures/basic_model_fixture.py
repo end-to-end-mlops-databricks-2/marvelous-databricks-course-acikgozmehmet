@@ -30,9 +30,9 @@ def basic_model() -> BasicModel:
     config = Config.from_yaml(CONFIG_FILE_PATH)
 
     # configuration changed for testing
-    config.experiment_name = config.experiment_name + "-testing"
-    config.model.name = config.model.name + "_testing"
-    config.model.artifact_path = config.model.artifact_path + "-testing"
+    config.experiment_name = config.experiment_name + "-basic-testing"
+    config.model.name = config.model.name + "_basic_testing"
+    config.model.artifact_path = config.model.artifact_path + "-basic-testing"
 
     tags = Tags(branch="testing")
     basic_model = BasicModel(config=config, tags=tags)
