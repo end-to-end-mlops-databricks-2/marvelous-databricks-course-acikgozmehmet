@@ -245,14 +245,32 @@ def test_split_data_when_not_processed_data(dataloader: DataLoader) -> None:
 def test__normalize_arrival_date(dataloader: DataLoader) -> None:
     """Test the _normalize_arrival_date method of the DataLoader class.
 
-    This function checks if the method correctly adds an 'arrival' column to
+    This function checks if the method correctly adds an 'date_of_arrival' column to
     the dataframe and ensures all values in the column are of type date.
 
     :param dataloader: An instance of the DataLoader class to be tested
     """
     dataloader._normalize_arrival_date()
-    assert "arrival" in dataloader.df.columns.tolist()
-    assert all(isinstance(d, date) for d in dataloader.df["arrival"])
+    assert "date_of_arrival" in dataloader.df.columns.tolist()
+    assert all(isinstance(d, date) for d in dataloader.df["date_of_arrival"])
+
+
+def test__create_date_of_booking_column(dataloader: DataLoader) -> None:
+    """Test the creation of the date_of_booking column in the DataLoader.
+
+    This function verifies that the date_of_booking column is correctly created and contains valid date objects.
+
+    :param dataloader: The DataLoader instance to be tested
+    """
+    dataloader._normalize_arrival_date()
+    assert "date_of_arrival" in dataloader.df.columns.tolist()
+
+    dataloader._create_date_of_booking_column()
+    assert "date_of_booking" in dataloader.df.columns.tolist()
+    assert all(isinstance(d, date) for d in dataloader.df["date_of_booking"])
+
+    expected_date_of_arrival = dataloader.df["date_of_booking"] + pd.to_timedelta(dataloader.df["lead_time"], unit="d")
+    assert (dataloader.df["date_of_arrival"] == expected_date_of_arrival).all(), "The columns are not identical"
 
 
 def test_split_and_extract_data(dataloader: DataLoader) -> None:

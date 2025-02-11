@@ -209,10 +209,15 @@ class DataLoader:
     def _normalize_arrival_date(self) -> None:
         """Normalize the arrival date in the dataframe.
 
-        Applies the normalize_arrival_date function to each row of the dataframe and updates the 'arrival' column.
+        Applies the normalize_arrival_date function to each row of the dataframe and updates the 'date_of_arrival' column.
         """
-        self.df["arrival"] = self.df.apply(normalize_arrival_date, axis=1)
-        logger.info("Arrival date normalized successfully")
+        self.df["date_of_arrival"] = self.df.apply(normalize_arrival_date, axis=1)
+        logger.info("Arrival date normalized to 'date_of_arrival' successfully.")
+
+    def _create_date_of_booking_column(self) -> None:
+        """Create a new column 'date_of_booking' by subtracting 'lead_time' from 'date_of_arrival'."""
+        self.df["date_of_booking"] = self.df["date_of_arrival"] - pd.to_timedelta(self.df["lead_time"], unit="d")
+        logger.info("The column 'date_of_booking' created successfully.")
 
     def process_data(self) -> pd.DataFrame:
         """Process the data by renaming, validating columns, and checking data types.
@@ -233,6 +238,7 @@ class DataLoader:
 
             # Custom operations on data preprocessing
             self._normalize_arrival_date()
+            self._create_date_of_booking_column()
 
             # final checks on data preprocessing
             self._validate_processed_data()
