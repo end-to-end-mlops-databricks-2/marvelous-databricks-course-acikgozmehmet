@@ -18,6 +18,7 @@ from hotel_reservations.config import Config, Tags
 from hotel_reservations.utility import setup_logging
 from hotel_reservations.utility import is_databricks
 from hotel_reservations.custom_model import CustomModel, load_model
+from hotel_reservations.feature_lookup_model import FeatureLookUpModel
 from hotel_reservations import __version__
 
 print(__version__)
@@ -66,25 +67,31 @@ logger.info(f"{CONFIG.model.name = }")
 logger.info(f"{CONFIG.model.artifact_path = }")
 
 # COMMAND ----------
-# custom model file location
-# CURR_DIR = pathlib.Path()
-# custom_model_file_path =   (CURR_DIR / ".." /"tests" /"test_data" / "lightgbm-pipeline-model" / "model.pkl").resolve()
-# logger.info(f"{custom_model_file_path.as_posix() = }")
+%sql
+DROP TABLE IF EXISTS mlops_dev.acikgozm.hotel_features
 
-# COMMAND ----------
-# Let's have the custom model
-# model = load_model(custom_model_file_path.as_posix())
-
-# COMMAND ----------
-fe_model = CustomModel(config=CONFIG, tags=tags)
 # COMMAND ----------
 
 # COMMAND ----------
-# custom_model.log_model(model_input=model_input, model_output=model_output)
-
+fe_model = FeatureLookUpModel(config=CONFIG, tags=tags)
+# COMMAND ----------
 
 # COMMAND ----------
-# custom_model.register_model()
+fe_model.create_feature_table()
+
+# COMMAND ----------
+fe_model.define_feature_function()
+
+# COMMAND ----------
+fe_model.load_data()
+
+# COMMAND ----------
+fe_model.feature_engineering()
+# COMMAND ----------
+fe_model.train_log_model()
+# COMMAND ----------
+fe_model.register_model()
+# COMMAND ----------
 
 # COMMAND ----------
 # predictions
