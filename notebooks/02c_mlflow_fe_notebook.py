@@ -71,34 +71,43 @@ logger.info(f"{CONFIG.model.artifact_path = }")
 DROP TABLE IF EXISTS mlops_dev.acikgozm.hotel_features
 
 # COMMAND ----------
-
-# COMMAND ----------
+# Initialize model
 fe_model = FeatureLookUpModel(config=CONFIG, tags=tags)
-# COMMAND ----------
 
 # COMMAND ----------
+# Create feature table
 fe_model.create_feature_table()
 
 # COMMAND ----------
+# Define lead_time feature function
 fe_model.define_feature_function()
 
 # COMMAND ----------
+# Load data
 fe_model.load_data()
 
 # COMMAND ----------
+# Perform feature engineering
 fe_model.feature_engineering()
+
 # COMMAND ----------
+# Train and log model
 fe_model.train_log_model()
+
 # COMMAND ----------
+# Register the model
 fe_model.register_model()
-# COMMAND ----------
 
 # COMMAND ----------
-# predictions
-# input = pd.read_csv(
-#     (CURR_DIR / ".." / "tests" / "test_data" / "train_test_pred" / "xtest.csv").resolve().as_posix()
-# ).head(10)
+# Lets run prediction on the last production model
+# Load test set from Delta table
+test_set = spark.table(f"{CONFIG.catalog_name}.{CONFIG.schema_name}.test_set").limit(10)
+
+# Drop feature lookup columns and target
+X_test = test_set.drop("lead_time", "repeated_guest", "no_of_previous_cancellations","no_of_previous_bookings_not_canceled", CONFIG.target.alias)
+X_test.head()
 
 # COMMAND ----------
-# predictions = custom_model.load_latest_model_and_predict(input_data=input)
-# display(predictions)
+predictions = fe_model.load_latest_model_and_predict(X_test)
+display(predictions)
+

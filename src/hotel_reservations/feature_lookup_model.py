@@ -1,8 +1,6 @@
 """FeatureLookUp model."""
 
 import mlflow
-import numpy as np
-import pandas as pd
 from databricks import feature_engineering
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
@@ -10,7 +8,7 @@ from lightgbm import LGBMClassifier
 from loguru import logger
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 from sklearn.pipeline import Pipeline
@@ -197,13 +195,6 @@ class FeatureLookUpModel:
             mlflow.log_metric("accuracy", accuracy)
             mlflow.log_metric("auc", auc_test)
 
-            # dataset = mlflow.data.from_spark(
-            #     self.train_set_spark,
-            #     table_name=f"{self.catalog_name}.{self.schema_name}.train_set",
-            #     version=self.data_version,
-            # )
-            # mlflow.log_input(dataset, context="training")
-
             # log model
             signature = infer_signature(model_input=self.X_train, model_output=y_pred)
 
@@ -242,6 +233,8 @@ class FeatureLookUpModel:
         )
         logger.info("The model is registered in UC")
 
-    def load_latest_model_and_predict(self, X: pd.DataFrame) -> pd.DataFrame | np.ndarray:
+    def load_latest_model_and_predict(self, X: DataFrame) -> DataFrame:
         """Load the trained model from MLflow using Feature Engineering Client and make predictions."""
-        pass
+        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
+        predictions = self.fe.score_batch(model_uri=model_uri, df=X)
+        return predictions
