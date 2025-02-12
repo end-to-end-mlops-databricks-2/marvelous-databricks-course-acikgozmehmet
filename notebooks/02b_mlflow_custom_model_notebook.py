@@ -76,7 +76,8 @@ logger.info(f"{custom_model_file_path.as_posix() = }")
 model = load_model(custom_model_file_path.as_posix())
 
 # COMMAND ----------
-code_paths =[]
+# code_paths =[]
+code_paths =["/Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl"]
 custom_model = CustomModel(config=CONFIG, tags=tags, model=model, code_paths=code_paths)
 # COMMAND ----------
 # We need to provide model_input and model_output to infer_schema

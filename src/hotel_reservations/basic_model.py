@@ -31,9 +31,8 @@ class BasicModel:
         # default initializations
         self.config = config
         self.tags = tags.model_dump()  # noqa
-        # self.tags = tags.dict()  # noqa
 
-        # Initilization settings from config
+        # Initialization of settings from config
         self.num_features = self.config.features.numerical
         self.cat_features = self.config.features.categorical
         self.target = self.config.target.alias
@@ -45,7 +44,7 @@ class BasicModel:
         self.model_name = self.config.model.name
         self.model_artifact_path = self.config.model.artifact_path
 
-        # disable autologging in order not to have multiple experiments and runs :)
+        # Disable autologging to avoid creating multiple experiments and runs.
         mlflow.autolog(disable=True)
 
     def load_data(self) -> None:
@@ -72,7 +71,7 @@ class BasicModel:
         self.y_test = self.test_set[self.target]
 
         logger.info(
-            f"Data loaded successfully. Training set size: {self.X_train.shape} and test set size: {self.X_test.shape}."
+            f" ✅ Data loaded successfully. Training set size: {self.X_train.shape} and test set size: {self.X_test.shape}."
         )
 
     def prepare_features(self) -> None:
@@ -94,7 +93,7 @@ class BasicModel:
                 ("classifier", LGBMClassifier(**self.parameters)),  # Replace with your model
             ]
         )
-        logger.info("Preprocessing pipeline defined.")
+        logger.info("✅ Preprocessing pipeline defined.")
 
     def train(self) -> None:
         """Train the model using the pipeline and training data.
@@ -104,7 +103,7 @@ class BasicModel:
         # mlflow.set_experiment(self.experiment_name)  # noqa
         logger.info("Started training...")
         self.pipeline.fit(self.X_train, self.y_train)
-        logger.info("Model trained successfully.")
+        logger.info("✅ Model trained successfully.")
 
     def log_model(self) -> None:
         """Log the model, its parameters, and evaluation metrics using MLflow.
@@ -119,7 +118,7 @@ class BasicModel:
 
             y_pred = self.pipeline.predict(self.X_test)
 
-            # Evaulate metrics
+            # Evaluation metrics
             accuracy = accuracy_score(self.y_test, y_pred)
             auc_test = roc_auc_score(self.y_test, y_pred)
             clf_report = classification_report(self.y_test, y_pred)
@@ -169,7 +168,6 @@ class BasicModel:
 
         client = MlflowClient()
         client.set_registered_model_alias(
-            # name=f"{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic", # noqa
             name=registered_model.name,
             alias="latest-model",
             version=latest_version,
@@ -198,7 +196,7 @@ class BasicModel:
         run = mlflow.get_run(self.run_id)
         metrics = run.data.to_dictionary()["metrics"]
         params = run.data.to_dictionary()["params"]
-        logger.info("Dataset metadata retrieved")
+        logger.info("✅ Dataset metadata retrieved")
         return metrics, params
 
     def load_latest_model_and_predict(self, input_data: pd.DataFrame) -> np.ndarray:
@@ -212,11 +210,10 @@ class BasicModel:
         """
         logger.info("Loading latest model from Mlflow and making predictions")
 
-        # model_uri = f"models:/{self.catalog_name}.{self.schema_name}.hotel_reservations_model_basic@latest-model" # noqa
         model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
         model = mlflow.sklearn.load_model(model_uri)
 
-        logger.info("Model loaded succesfully.")
+        logger.info("✅ Model loaded successfully.")
 
         predictions = model.predict(input_data)
         return predictions

@@ -22,9 +22,13 @@ if is_databricks():
 
 
 class FeatureLookUpModel:
-    """FeatureLookUpModel."""
+    """FeatureLookUpModel.
+
+    This class implements feature engineering and model training using Databricks Feature Engineering Client.
+    """
 
     def __init__(self, config: Config, tags: Tags) -> None:
+        """Initialize FeatureLookUpModel with configurations and tags."""
         self.workspace = WorkspaceClient()
         self.fe = feature_engineering.FeatureEngineeringClient()
         self.config = config
@@ -50,9 +54,10 @@ class FeatureLookUpModel:
         mlflow.autolog(disable=True)
 
     def create_feature_table(self) -> None:
-        """Create or replace the hotel_features table and populate it."""
-        # self.fe.create_table(name=self.feature_table_name, primary_key=["booking_id"], df=self.train_set)  # noqa
+        """Create or replace the hotel_features table and populate it.
 
+        This table stores hotel features used for model training.
+        """
         spark.sql(f"""
         CREATE OR REPLACE TABLE {self.feature_table_name}
         (booking_id STRING NOT NULL, repeated_guest INT, no_of_previous_cancellations INT, no_of_previous_bookings_not_canceled INT);
@@ -79,7 +84,10 @@ class FeatureLookUpModel:
         logger.info("✅ Feature table created and populated.")
 
     def define_feature_function(self) -> None:
-        """Define a function to calculate the lead_time."""
+        """Define a function to calculate the lead_time.
+
+        This function calculates the difference in days between the date of arrival and the date of booking.
+        """
         spark.sql(f"""
         CREATE OR REPLACE FUNCTION {self.feature_function_name}(date_of_arrival DATE, date_of_booking DATE)
         RETURNS INT
@@ -92,7 +100,10 @@ class FeatureLookUpModel:
         logger.info("✅ Feature function defined.")
 
     def load_data(self) -> None:
-        """Load training and testing data from Delta tables."""
+        """Load training and testing data from Delta tables.
+
+        It also prepares the data by dropping unnecessary columns.
+        """
         if not is_databricks():
             raise ValueError("This function is only supported on Databricks.")
 
@@ -115,7 +126,10 @@ class FeatureLookUpModel:
         logger.info(f"✅ Data successfully loaded by dropping {', '.join(drop_list)}.")
 
     def feature_engineering(self) -> None:
-        """Perform feature engineering by linking data with feature tables."""
+        """Perform feature engineering by linking data with feature tables.
+
+        It uses Feature Engineering Client to create a training set by joining features.
+        """
         self.training_set = self.fe.create_training_set(
             df=self.train_set,
             label=self.target,
@@ -157,7 +171,10 @@ class FeatureLookUpModel:
         logger.info("✅ Feature engineering completed.")
 
     def train_log_model(self) -> None:
-        """Train the model and log results to MLflow."""
+        """Train the model and log results to MLflow.
+
+        This includes preprocessing, model training, and metric evaluation.
+        """
         logger.info("🚀 Starting training...")
 
         preprocessor = ColumnTransformer(
@@ -234,7 +251,11 @@ class FeatureLookUpModel:
         logger.info("The model is registered in UC")
 
     def load_latest_model_and_predict(self, X: DataFrame) -> DataFrame:
-        """Load the trained model from MLflow using Feature Engineering Client and make predictions."""
+        """Load the trained model from MLflow using Feature Engineering Client and make predictions.
+
+        :param X: Input DataFrame for prediction.
+        :return: DataFrame containing the predictions.
+        """
         model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)
         return predictions

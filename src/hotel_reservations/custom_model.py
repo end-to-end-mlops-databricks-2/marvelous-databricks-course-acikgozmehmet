@@ -13,9 +13,6 @@ from mlflow.utils.environment import _mlflow_conda_env
 
 from hotel_reservations.config import Config, Tags
 
-# model_file, model_path, model_file_path
-# https://www.perplexity.ai/search/you-are-an-expert-on-mlflow-wi-qG83lj2oSISJCB12sMsHKQ
-
 
 def load_model(file_path: str) -> object:
     """Load a serialized model from a file using cloudpickle.
@@ -40,8 +37,8 @@ class ModelWrapper(mlflow.pyfunc.PythonModel):
     def predict(
         self,
         context: mlflow.pyfunc.PythonModelContext,
-        model_input: Union[pd.DataFrame, np.array],  #  noqa
-    ) -> Union[pd.DataFrame, np.array]:  #  noqa
+        model_input: Union[pd.DataFrame, np.array],  # noqa
+    ) -> Union[pd.DataFrame, np.array]:  # noqa
         """Perform predictions using the wrapped model.
 
         :param context: The MLflow PythonModelContext, which provides runtime information.
@@ -60,7 +57,7 @@ class CustomModel:
         self.model = ModelWrapper(model)
         self.code_paths = code_paths
 
-        # initialize from config
+        # Initialization of settings  from config
         self.catalog_name = self.config.catalog_name
         self.schema_name = self.config.schema_name
         self.experiment_name = self.config.experiment_name
@@ -83,14 +80,8 @@ class CustomModel:
         with mlflow.start_run(tags=self.tags) as run:
             self.run_id = run.info.run_id
 
-            #  work around
-
             # Log the model
             signature = infer_signature(model_input=model_input, model_output=model_output)
-
-            # dataset = mlflow.data.  #  noqa
-            # dataset = mlflow.data.from_pandas(xtrain, (TRAIN_TEST_PRED_FOLDER / "xtrain.csv").resolve().as_posix())  # noqa
-            # mlflow.log_input(dataset, context="training") #  noqa
 
             conda_env = _mlflow_conda_env(additional_pip_deps=additional_pip_deps)
 
@@ -123,12 +114,12 @@ class CustomModel:
 
     def load_latest_model_and_predict(self, input_data: pd.DataFrame) -> Union[pd.DataFrame, np.array]:  #  noqa
         """Load latest."""
-        logger.info("��� Loading the latest model...")
+        logger.info("Loading the latest model...")
 
         model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
         model = mlflow.pyfunc.load_model(model_uri)
 
-        logger.info("�� Model loaded successfully.")
+        logger.info("✅ Model loaded successfully.")
 
         # make predictions
         predictions = model.predict(input_data)

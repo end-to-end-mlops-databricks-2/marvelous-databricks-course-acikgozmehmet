@@ -216,7 +216,10 @@ class DataLoader:
 
     def _create_date_of_booking_column(self) -> None:
         """Create a new column 'date_of_booking' by subtracting 'lead_time' from 'date_of_arrival'."""
-        self.df["date_of_booking"] = self.df["date_of_arrival"] - pd.to_timedelta(self.df["lead_time"], unit="d")
+        self.df["date_of_arrival"] = pd.to_datetime(self.df["date_of_arrival"])
+        self.df["lead_time"] = pd.to_timedelta(self.df["lead_time"], unit="D")
+        self.df["date_of_booking"] = self.df["date_of_arrival"] - self.df["lead_time"]
+
         logger.info("The column 'date_of_booking' created successfully.")
 
     def process_data(self) -> pd.DataFrame:
