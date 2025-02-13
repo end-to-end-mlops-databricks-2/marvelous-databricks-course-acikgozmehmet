@@ -71,7 +71,7 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
 
 *   **Use Case:** Ideal for projects requiring a standardized and repeatable machine learning pipeline within Databricks, with a focus on experiment tracking, model governance, and simplified deployment through MLflow and Unity Catalog.
 
-#### `Custom Model` 
+#### `Custom Model`
 
 *   The `CustomModel` module provides a flexible framework for integrating arbitrary pre-trained machine learning models into an MLflow workflow, particularly within a Databricks environment, leveraging Unity Catalog (UC) for model governance. It's designed to handle models that might not be directly supported by MLflow's built-in logging functions, allowing you to wrap and deploy models created using any library.
 
@@ -106,4 +106,3 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
     *   **Databricks-Centric:** Designed specifically for Databricks environments, leveraging the Feature Engineering Client, Spark for data handling, and Unity Catalog for model and feature governance.
 *   **Workflow:**  The module orchestrates a feature-rich machine learning pipeline: creating feature tables and functions, loading data and enriching it with Feature Lookups, training an LGBMClassifier model, logging metadata and performance to MLflow, and registering the model in Unity Catalog.
 *   **Use Case:**  Well-suited for projects that require advanced feature engineering capabilities, such as feature sharing, feature reuse, and automated feature management within Databricks. It's ideal for scenarios where feature tables are managed separately and need to be dynamically joined with training data.
-
