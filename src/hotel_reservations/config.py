@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 import yaml
 from loguru import logger
@@ -11,6 +11,30 @@ from pydantic import (
     Field,
     ValidationError,
 )
+
+from hotel_reservations.utility import get_current_git_sha
+
+
+class Tags(BaseModel):
+    """Represents a tag in a version control system.
+
+    Contains information about the git SHA and branch associated with the tag.
+    """
+
+    git_sha: str = Field(default_factory=get_current_git_sha)
+    branch: str
+
+
+class Model(BaseModel):
+    """Represents a model with a name and artifact path.
+
+    This class inherits from BaseModel and defines two attributes.
+    :param name: The name of the model.
+    :param artifact_path: The path to the model artifact.
+    """
+
+    name: str
+    artifact_path: str
 
 
 class NumFeature(BaseModel):
@@ -50,20 +74,42 @@ class Target(BaseModel):
     alias: str
 
 
+class Feature(BaseModel):
+    """Represents a feature with numeric and categorical attributes.
+
+    This class inherits from BaseModel and defines two list attributes.
+
+    :param numeric: A list of names for numerical features.
+    :param categorical: A list of names for categorical features.
+    """
+
+    numerical: list[str]
+    categorical: list[str]
+
+
 class Config(BaseModel):
     """A class representing a configuration schema.
 
+    :param experiment_name: The name of the experiment.
+    :param catalog_name: The name of the catalog.
     :param schema_name: The name of the schema.
+    :param parameters: Parameters for model training.
     :param num_features: A list of numerical features.
     :param cat_features: An optional list of categorical features.
     :param target: The target feature.
+    :param features: The features.
+    :param model: The model.
     """
 
+    experiment_name: str
     catalog_name: str
     schema_name: str
+    parameters: dict[str, Any] = Field(description="Parameters for model training.")
     num_features: list[NumFeature]
     cat_features: list[CatFeature] | None = Field(default_factory=list)
     target: Target
+    features: Feature
+    model: Model
 
     @classmethod
     def from_yaml(cls, config_file: str) -> Config:

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - hotel_reservation_data_ingestion
+      - dev
   pull_request:
     branches:
       - main

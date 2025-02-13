@@ -39,6 +39,9 @@ build-backend = "setuptools.build_meta"
 where =["src"]
 include = ["hotel_reservations"]
 
+[tool.setuptools.package-data]
+"hotel_reservations" = ["data/*"]
+
 [tool.setuptools.dynamic]
 version = { file = "version.txt" }
 
@@ -62,6 +65,7 @@ lint.select = [
 ]
 
 lint.ignore = [
+    "D107", # Missing docstring in `__init__`
     "D203", # incorrect-blank-line-before-class
     "D213", # multi-line-summary-second-line
     "E501", # line-too-long
@@ -70,3 +74,10 @@ lint.ignore = [
 [tool.ruff.format]
 indent-style = "space"
 docstring-code-format = true
+
+# [tool.ruff.pydocstyle]
+# convention = "google"
+# # convention = "sphinx"
+
+# [tool.ruff.lint.pydocstyle]
+# convention = "sphinx"

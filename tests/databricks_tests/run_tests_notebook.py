@@ -21,20 +21,7 @@ import pytest
 # wd = os.getcwd()
 wd = pathlib.Path().resolve()
 print(f"Current working directory: {wd}")
-unit_test_folder = (wd / "../unit_tests").as_posix()
-# COMMAND ----------
-
-
-# dbutils.widgets.text(
-#     "p_test_folder", unit_test_folder
-# )  # noqa: F821 # pylint: disable=undefined-variable
-# v_test_folder = dbutils.widgets.get("p_test_folder")  # noqa: F821
-# print(f"Test folder path from widget: {v_test_folder}")
-
-# COMMAND ----------
-# Ensure pytest-json-report is installed (uncomment if needed)
-# !pip install pytest-json-report --quiet
-
+unit_test_folder = (wd / "../unit_tests").resolve().as_posix()
 # COMMAND ----------
 
 try:

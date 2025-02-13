@@ -2,7 +2,7 @@
 
 import pytest
 
-from hotel_reservations.config import Config
+from hotel_reservations.config import Config, Tags
 
 
 @pytest.fixture(scope="module")
@@ -17,6 +17,12 @@ def config(tmp_path_factory: pytest.TempPathFactory) -> Config:
     config_str = """
 catalog_name: my_catalog
 schema_name: default
+experiment_name: /Shared/my_experiment
+
+model:
+  name: hotel_reservations_model
+  artifact_path: lightgbm-pipeline-model
+
 parameters:
     random_state: 42
 
@@ -36,13 +42,18 @@ target:
   alias: Default
 
 features:
-  # Clean Column Names
-  clean:
-    - Id
+  numerical:
+  - no_of_adults
+  - no_of_children
+  - no_of_weekend_nights
+  - no_of_week_nights
 
-  robust:
-    - Limit_bal
 
+  categorical:
+  - booking_id
+  - type_of_meal_plan
+  - room_type_reserved
+  - market_segment_type
 
 extra_field: extra_value
 """
@@ -99,3 +110,13 @@ def test_assert_extra_field(config: Config) -> None:
     """
     assert config.schema_name == "default"
     assert not hasattr(config, "extra_field")
+
+
+def test_create_tag() -> None:
+    """Test the creation of a tag using the Config object.
+
+    :param config: The Config object containing target configuration.
+    """
+    tags = Tags(branch="test")
+    assert tags.git_sha
+    assert tags.branch == "test"
