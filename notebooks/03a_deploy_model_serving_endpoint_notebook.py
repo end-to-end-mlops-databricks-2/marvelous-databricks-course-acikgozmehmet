@@ -124,20 +124,8 @@ display(sampled_records)
 dataframe_records = [[rec] for rec in sampled_records]
 print(dataframe_records)
 # COMMAND ----------
-status_code, response_text = call_endpoint(dataframe_records[0])
+status_code, response_text = call_endpoint(endpoint_name, dataframe_records[0])
 print(f"Response Status: {status_code}")
 print(f"Response Text: {response_text}")
 # COMMAND ----------
-
-# Lets run prediction on the last production model
-# Load test set from Delta table
-# test_set = spark.table(f"{CONFIG.catalog_name}.{CONFIG.schema_name}.test_set").limit(10)
-
-# Drop feature lookup columns and target
-# X_test = test_set.drop("lead_time", "repeated_guest", "no_of_previous_cancellations","no_of_previous_bookings_not_canceled", CONFIG.target.alias)
-# X_test.head()
-
-# COMMAND ----------
-# predictions = fe_model.load_latest_model_and_predict(X_test)
-# display(predictions)
 
