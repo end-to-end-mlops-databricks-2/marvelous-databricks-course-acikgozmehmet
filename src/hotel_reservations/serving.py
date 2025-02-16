@@ -71,13 +71,6 @@ class ModelServing(ServingBase):
             )
         ]
 
-    def deploy_or_update_serving_endpoint(self, served_entities: list[ServedEntityInput]) -> None:
-        """Deploy or update the serving endpoint with the given served entities.
-
-        :param served_entities: List of ServedEntityInput objects to be deployed or updated
-        """
-        super().deploy_or_update_serving_endpoint(served_entities)
-
     def _get_latest_model_version(self) -> str:
         """Retrieve the latest version of the model.
 
@@ -87,3 +80,10 @@ class ModelServing(ServingBase):
         latest_version = client.get_model_version_by_alias(self.model_name, alias="latest-model").version
         print(f"Latest model version: {latest_version}")
         return latest_version
+
+    def deploy_or_update_serving_endpoint(self, served_entities: list[ServedEntityInput]) -> None:
+        """Deploy or update the serving endpoint with the given served entities.
+
+        :param served_entities: List of ServedEntityInput objects to be deployed or updated
+        """
+        super().deploy_or_update_serving_endpoint(self.served_entities)
