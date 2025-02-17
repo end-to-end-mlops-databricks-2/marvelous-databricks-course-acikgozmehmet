@@ -6,26 +6,27 @@
 %restart_python
 
 # COMMAND ----------
-from IPython.core.display_functions import display
-
-# COMMAND ----------
+# Standard library imports
 import os
 import pathlib
-
 import time
+
+# Third-party library imports
+import mlflow
 import pandas as pd
 import requests
-from dotenv import load_dotenv
 from databricks import feature_engineering
-import mlflow
+from dotenv import load_dotenv
+from IPython.core.display_functions import display
 from loguru import logger
-from pyspark.sql import SparkSession
 from pyspark.dbutils import DBUtils
-from hotel_reservations.config import Config, Tags
-from hotel_reservations.utility import setup_logging, call_endpoint
-from hotel_reservations.utility import is_databricks
-from hotel_reservations.serving import ModelServing, FeatureServing
+from pyspark.sql import SparkSession
+
+# Local/application-specific imports
 from hotel_reservations import __version__
+from hotel_reservations.config import Config, Tags
+from hotel_reservations.serving import FeatureServing, ModelServing
+from hotel_reservations.utility import call_endpoint, is_databricks, setup_logging
 
 print(__version__)
 
@@ -71,7 +72,7 @@ print(f"{CONFIG_FILE_PATH = }")
 CONFIG = Config.from_yaml(CONFIG_FILE_PATH)
 
 # COMMAND ----------
-# configuration changed for testing
+# update the configuration for reusability.
 CONFIG.model.name = CONFIG.model.name + "_basic"
 logger.info(f"{CONFIG.model.name = }")
 
@@ -137,6 +138,7 @@ feature_serving.create_feature_spec()
 feature_serving.deploy_or_update_serving_endpoint_with_retry(retry_interval=60)
 
 # COMMAND ----------
+# Let's test the endpoint
 dataframe_records = [{"booking_id": "INN32499"}]
 logger.info(dataframe_records)
 
@@ -146,9 +148,9 @@ status_code, response_text = call_endpoint(endpoint_name, dataframe_records)
 end_time = time.time()
 execution_time = end_time - start_time
 
-logger.info("Response status:", status_code)
-logger.info("Response text:", response_text)
-logger.info("Execution time:", execution_time, "seconds")
+logger.info(f"{status_code = }")
+logger.info(f"{response_text =}")
+logger.info(f"{execution_time = } seconds")
 
 # COMMAND ----------
 serving_endpoint = f"https://{os.environ['DBR_HOST']}/serving-endpoints/{endpoint_name}/invocations"
@@ -161,23 +163,14 @@ response = requests.post(
 )
 
 # COMMAND ----------
-logger.info("Response status:", response.status_code)
-logger.info("Response text:", response.text)
-logger.info("Execution time:", execution_time, "seconds")
+logger.info(f"{response.status_code = }")
+logger.info(f"{response.text =}")
+logger.info(f"{execution_time = } seconds")
 
 # COMMAND ----------
+# Clean-up
 # delete the endpoint
-feature_serving.delete_serving_endpoint()
+# feature_serving.delete_serving_endpoint()
 
-# COMMAND ----------
 #delete feature_spec
-feature_serving.delete_feature_spec()
-
-# COMMAND ----------
-
-
-# delete feature spec
-# from databricks.feature_engineering import FeatureEngineeringClient
-
-# fe_client = FeatureEngineeringClient()
-# fe_client.delete_feature_spec(name="mlops_dev.acikgozm.return_predictions")
+# feature_serving.delete_feature_spec()
