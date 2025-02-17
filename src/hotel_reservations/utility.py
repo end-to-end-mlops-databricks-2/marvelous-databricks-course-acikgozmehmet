@@ -163,6 +163,8 @@ def get_dbr_token() -> str:
 
     :return: The Databricks API token as a string.
     :raises ValueError: If not running in a Databricks environment.
+    Important note: Never use your personal databricks token in real application. Create Service Principal instead.
+    This is just for testing purposes
     """
     if is_databricks():
         spark = SparkSession.builder.getOrCreate()

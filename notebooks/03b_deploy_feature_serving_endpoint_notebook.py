@@ -1,11 +1,12 @@
 # Databricks notebook source
-from IPython.core.display_functions import display
-
 !pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 
 # COMMAND ----------
 
 %restart_python
+
+# COMMAND ----------
+from IPython.core.display_functions import display
 
 # COMMAND ----------
 import os
@@ -100,7 +101,7 @@ train_set = spark.table(f"{catalog_name}.{schema_name}.train_set").toPandas()
 test_set = spark.table(f"{catalog_name}.{schema_name}.test_set").toPandas()
 df = pd.concat([train_set, test_set])
 
-model = mlflow.sklearn.load_model(f"models:/{catalog_name}.{schema_name}.house_prices_model_basic@latest-model")
+model = mlflow.sklearn.load_model(f"models:/{catalog_name}.{schema_name}.hotel_reservations_model_basic@latest-model")
 
 
 # COMMAND ----------
@@ -140,39 +141,17 @@ feature_serving.deploy_or_update_serving_endpoint_with_retry()
 
 # COMMAND ----------
 
-
-
 # COMMAND ----------
-required_columns = [
-    "no_of_adults",
-    "no_of_children",
-    "no_of_weekend_nights",
-    "no_of_week_nights",
-    "required_car_parking_space",
-    "lead_time",
-    "repeated_guest",
-    "no_of_previous_cancellations",
-    "no_of_previous_bookings_not_canceled",
-    "avg_price_per_room",
-    "no_of_special_requests",
-    "type_of_meal_plan",
-    "room_type_reserved"
-]
-
-# COMMAND ----------
-test_set = spark.table(f"{CONFIG.catalog_name}.{CONFIG.schema_name}.test_set").toPandas()
-display(test_set.head(10))
-
-# COMMAND ----------
-sampled_records = test_set[required_columns].sample(n=100, replace=True).to_dict(orient="records")
-display(sampled_records)
-
-# COMMAND ----------
-dataframe_records = [[rec] for rec in sampled_records]
+dataframe_records = [{"booking_id": "INN32499"}]
 print(dataframe_records)
 # COMMAND ----------
-status_code, response_text = call_endpoint(endpoint_name, dataframe_records[0])
+status_code, response_text = call_endpoint(endpoint_name, dataframe_records)
 print(f"Response Status: {status_code}")
 print(f"Response Text: {response_text}")
-# COMMAND ----------
 
+# COMMAND ----------
+# delete feature spec
+# from databricks.feature_engineering import FeatureEngineeringClient
+
+# fe_client = FeatureEngineeringClient()
+# fe_client.delete_feature_spec(name="mlops_dev.acikgozm.return_predictions")
