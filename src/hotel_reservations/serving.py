@@ -1,8 +1,20 @@
 """Serving Module."""
 
+import datetime
+import time
+from loguru import logger
+
 import mlflow
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.errors import ResourceConflict
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
+from databricks import feature_engineering
+from databricks.feature_engineering import FeatureLookup
+
+from databricks.sdk.service.catalog import (
+    OnlineTableSpec,
+    OnlineTableSpecTriggeredSchedulingPolicy,
+)
 
 # model_name -> full_model_name
 
@@ -41,6 +53,14 @@ class ServingBase:
         else:
             self.workspace.serving_endpoints.update_config(name=self.endpoint_name, served_entities=served_entities)
 
+    def delete_serving_endpoint(self):
+        """Delete the serving endpoint."""
+        try:
+            self.workspace.serving_endpoints.delete(name=self.endpoint_name)
+            logger.info(f"Serving endpoint '{self.endpoint_name}' deleted successfully")
+        except ResourceConflict:
+            logger.error(f"Failed to delete serving endpoint '{self.endpoint_name}': Resource conflict")
+
 
 class ModelServing(ServingBase):
     """A class for managing model serving operations.
@@ -78,12 +98,79 @@ class ModelServing(ServingBase):
         """
         client = mlflow.MlflowClient()
         latest_version = client.get_model_version_by_alias(self.model_name, alias="latest-model").version
-        print(f"Latest model version: {latest_version}")
+        logger.info(f"Latest model version: {latest_version}")
         return latest_version
 
-    def deploy_or_update_serving_endpoint(self, served_entities: list[ServedEntityInput]) -> None:
-        """Deploy or update the serving endpoint with the given served entities.
-
-        :param served_entities: List of ServedEntityInput objects to be deployed or updated
-        """
+    def deploy_or_update_serving_endpoint_with_retry(self, max_retries=10, retry_interval=30):
         super().deploy_or_update_serving_endpoint(self.served_entities)
+        for attempt in range(max_retries):
+            try:
+                self.workspace.serving_endpoints.update_config_and_wait(
+                    name=f"{self.endpoint_name}", served_entities=self.served_entities,
+                    timeout=datetime.timedelta(minutes=20)
+                )
+                logger.info("Deployment successful")
+                return
+            except ResourceConflict as e:
+                if "Endpoint served entities are currently being updated" in str(e):
+                    logger.info(f"Attempt {attempt + 1}/{max_retries}: Endpoint is being updated. Retrying in {retry_interval} seconds...")
+                    time.sleep(retry_interval)
+                else:
+                    raise
+        logger.info("Max retries reached. Deployment failed.")
+
+
+class FeatureServing(ServingBase):
+    def __init__(self, endpoint_name: str,
+                 feature_table_name: str,
+                 feature_spec_name: str,
+                 workload_size: str = "Small",
+                 scale_to_zero: bool = True):
+        super().__init__(endpoint_name)
+        self.feature_table_name = feature_table_name
+        self.feature_spec_name = feature_spec_name
+        self.online_table_name = f"{feature_table_name}_online"
+        self.fe = feature_engineering.FeatureEngineeringClient()
+        self.served_entities = [
+            ServedEntityInput(
+                entity_name=self.feature_spec_name, scale_to_zero_enabled=scale_to_zero, workload_size=workload_size
+            )
+        ]
+
+    def create_online_table(self):
+        spec = OnlineTableSpec(
+            primary_key_columns=["booking_id"],
+            source_table_full_name=self.feature_table_name,
+            run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
+            perform_full_copy=False,
+        )
+        self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+
+    def _create_feature_spec(self):
+        # "lead_time" in feature_names??
+        features = [
+            FeatureLookup(
+                table_name=self.feature_table_name,
+                lookup_key="booking_id",
+                feature_names=["repeated_guest", "no_of_previous_cancellations", "no_of_previous_bookings_not_canceled"],
+            )
+        ]
+        self.fe.create_feature_spec(name=self.feature_spec_name, features=features, exclude_columns=None)
+
+    def deploy_or_update_serving_endpoint_with_retry(self, max_retries=10, retry_interval=30):
+        super().deploy_or_update_serving_endpoint(self.served_entities)
+        for attempt in range(max_retries):
+            try:
+                self.workspace.serving_endpoints.update_config_and_wait(
+                    name=f"{self.endpoint_name}", served_entities=self.served_entities,
+                    timeout=datetime.timedelta(minutes=20)
+                )
+                logger.info("Deployment successful")
+                return
+            except ResourceConflict as e:
+                if "Endpoint served entities are currently being updated" in str(e):
+                    logger.info(f"Attempt {attempt + 1}/{max_retries}: Endpoint is being updated. Retrying in {retry_interval} seconds...")
+                    time.sleep(retry_interval)
+                else:
+                    raise
+        logger.info("Max retries reached. Deployment failed.")

@@ -11,19 +11,18 @@ from IPython.core.display_functions import display
 import os
 import pathlib
 
-
+import pandas as pd
 import requests
 from dotenv import load_dotenv
-
+from databricks import feature_engineering
 import mlflow
 from loguru import logger
 from pyspark.sql import SparkSession
 from pyspark.dbutils import DBUtils
-
 from hotel_reservations.config import Config, Tags
 from hotel_reservations.utility import setup_logging, call_endpoint
 from hotel_reservations.utility import is_databricks
-from hotel_reservations.serving import ModelServing
+from hotel_reservations.serving import ModelServing, FeatureServing
 from hotel_reservations import __version__
 
 print(__version__)
@@ -40,6 +39,8 @@ os.environ['DBR_HOST'] = spark.conf.get('spark.databricks.workspaceUrl')
 
 mlflow.set_tracking_uri("databricks")
 mlflow.set_registry_uri("databricks-uc")
+
+fe = feature_engineering.FeatureEngineeringClient()
 
 
 # COMMAND ----------
@@ -81,18 +82,64 @@ logger.info(f"{CONFIG.model.name = }")
 logger.info(f"{CONFIG.model.artifact_path = }")
 
 # COMMAND ----------
-# Initialize model
-full_model_name=f"{CONFIG.catalog_name}.{CONFIG.schema_name}.{CONFIG.model.name}"
-print(f"{full_model_name = }")
+catalog_name = CONFIG.catalog_name
+schema_name = CONFIG.schema_name
+feature_table_name = f"{catalog_name}.{schema_name}.hotel_reservations_preds"
+feature_spec_name = f"{catalog_name}.{schema_name}.return_predictions"
 
-endpoint_name = CONFIG.model.name.replace("_", "-") +"-serving"
+# COMMAND ----------
+# Initialize model
+# full_model_name=f"{CONFIG.catalog_name}.{CONFIG.schema_name}.{CONFIG.model.name}"
+# print(f"{full_model_name = }")
+
+endpoint_name = CONFIG.model.name.replace("_", "-") +"-feature-serving"
 print(f"{endpoint_name = }")
 
 # COMMAND ----------
-model_serving = ModelServing(model_name=full_model_name, endpoint_name=endpoint_name)
+train_set = spark.table(f"{catalog_name}.{schema_name}.train_set").toPandas()
+test_set = spark.table(f"{catalog_name}.{schema_name}.test_set").toPandas()
+df = pd.concat([train_set, test_set])
 
-# Deploy the model serving endpoint
-model_serving.deploy_or_update_serving_endpoint_with_retry()
+model = mlflow.sklearn.load_model(f"models:/{catalog_name}.{schema_name}.house_prices_model_basic@latest-model")
+
+
+# COMMAND ----------
+preds_df = df[["booking_id"]]
+preds_df["Predicted_Default"] = model.predict(df[CONFIG.features.categorical + CONFIG.features.numerical])
+preds_df = spark.createDataFrame(preds_df)
+
+
+# COMMAND ----------
+fe.create_table(
+  name = feature_table_name,
+  primary_keys=["booking_id"],
+  df = preds_df,
+  description = "Hotel booking cancellation predictions"
+)
+
+
+# COMMAND ----------
+spark.sql(f"ALTER TABLE {feature_table_name} "
+          "SET TBLPROPERTIES (delta.enableChangeDataFeed = true);")
+
+# COMMAND ----------
+feature_serving = FeatureServing(
+    feature_table_name=feature_table_name, feature_spec_name=feature_spec_name, endpoint_name=endpoint_name
+)
+# COMMAND ----------
+# Create online table
+feature_serving.create_online_table()
+
+# COMMAND ----------
+# Create feature spec
+feature_serving.create_feature_spec()
+
+# COMMAND ----------
+# Deploy feature serving endpoint
+feature_serving.deploy_or_update_serving_endpoint_with_retry()
+
+# COMMAND ----------
+
 
 
 # COMMAND ----------
