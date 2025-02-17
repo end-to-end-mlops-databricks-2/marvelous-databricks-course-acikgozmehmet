@@ -68,8 +68,7 @@ class ServingBase:
             try:
                 self.workspace.serving_endpoints.update_config_and_wait(
                     name=f"{self.endpoint_name}",
-                    served_entities=served_entities,
-                    timeout=datetime.timedelta(seconds=retry_interval),
+                    served_entities=served_entities
                 )
                 logger.info("Deployment successful")
                 return

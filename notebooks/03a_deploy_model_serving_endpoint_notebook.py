@@ -1,10 +1,7 @@
 # Databricks notebook source
-from IPython.core.display_functions import display
-
 !pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 
 # COMMAND ----------
-
 %restart_python
 
 # COMMAND ----------
