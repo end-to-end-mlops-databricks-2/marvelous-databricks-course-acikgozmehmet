@@ -273,6 +273,4 @@ class FeatureLookupServing(ModelServing):
         :param max_retries: Maximum number of retry attempts
         :param retry_interval: Time interval between retries in seconds
         """
-        super().deploy_or_update_serving_endpoint_with_retry(
-            served_entities=self.served_entities, max_retries=max_retries, retry_interval=retry_interval
-        )
+        super().deploy_or_update_serving_endpoint_with_retry(max_retries=max_retries, retry_interval=retry_interval)

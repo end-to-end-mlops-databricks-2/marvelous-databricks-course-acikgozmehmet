@@ -115,7 +115,10 @@ class FeatureLookUpModel:
             "no_of_previous_bookings_not_canceled",
         ]
 
-        self.train_set_spark = spark.table(f"{self.catalog_name}.{self.schema_name}.train_set").drop(*drop_list)
+        # self.train_set_spark = spark.table(f"{self.catalog_name}.{self.schema_name}.train_set").drop(*drop_list)
+        self.train_set_spark = spark.table(f"{self.catalog_name}.{self.schema_name}.train_set")
+        features = [self.num_features + self.cat_features]
+        self.train_set_spark = self.train_set_spark.select(*features).drop(*drop_list)
         # self.train_set = self.train_set_spark.toPandas()  # noqa
         self.train_set = self.train_set_spark
         self.test_set = spark.table(f"{self.catalog_name}.{self.schema_name}.test_set").toPandas()

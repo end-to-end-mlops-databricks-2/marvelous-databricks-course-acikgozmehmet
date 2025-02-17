@@ -86,7 +86,7 @@ logger.info(f"{full_model_name = }")
 
 # COMMAND ----------
 feature_table_name = f"{catalog_name}.{schema_name}.hotel_features"
-endpoint_name = CONFIG.model.name.replace("_", "-") +"-fe-serving"
+endpoint_name = CONFIG.model.name.replace("_", "-") +"-serving"
 
 logger.info(f"{feature_table_name = }")
 logger.info(f"{endpoint_name = }")
@@ -106,7 +106,7 @@ feature_model_server.create_online_table()
 
 # COMMAND ----------
 # Deploy the model serving endpoint with feature lookup
-feature_model_server.deploy_or_update_serving_endpoint()
+feature_model_server.deploy_or_update_serving_endpoint_with_retry(retry_interval=60)
 
 # COMMAND ----------
 # Let's test the endpoint
