@@ -1,6 +1,5 @@
 """Serving Module."""
 
-import datetime
 import time
 
 import mlflow
@@ -67,8 +66,7 @@ class ServingBase:
         for attempt in range(max_retries):
             try:
                 self.workspace.serving_endpoints.update_config_and_wait(
-                    name=f"{self.endpoint_name}",
-                    served_entities=served_entities
+                    name=f"{self.endpoint_name}", served_entities=served_entities
                 )
                 logger.info("Deployment successful")
                 return
@@ -219,3 +217,62 @@ class FeatureServing(ServingBase):
         Deletes the feature specification using the FeatureEngineeringClient.
         """
         self.fe.delete_feature_spec(name=self.feature_spec_name)
+
+
+class FeatureLookupServing(ModelServing):
+    """Manages feature lookup serving for a model endpoint.
+
+    This class handles the creation and management of online tables for feature lookup,
+    as well as the deployment of serving endpoints with retry mechanisms.
+
+    Attributes:
+        feature_table_name (str): Name of the feature table.
+        online_table_name (str): Name of the online table derived from the feature table.
+
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        endpoint_name: str,
+        feature_table_name: str,
+        workload_size: str = "Small",
+        scale_to_zero: bool = True,
+    ) -> None:
+        """Initialize a FeatureLookupServing instance.
+
+        :param model_name: Name of the model to be served
+        :param endpoint_name: Name of the serving endpoint
+        :param feature_table_name: Name of the feature table
+        :param workload_size: Size of the workload, defaults to "Small"
+        :param scale_to_zero: Whether to scale to zero, defaults to True
+        """
+        super().__init__(model_name, endpoint_name)
+        self.feature_table_name = feature_table_name
+        self.online_table_name = f"{self.feature_table_name}_online"
+
+    def create_online_table(self) -> None:
+        """Create an online table in Databricks.
+
+        This method creates an online table using the specified feature table as the source.
+        The online table is configured with a triggered scheduling policy and without performing a full copy.
+
+        :param self: The instance of the class containing this method.
+        """
+        spec = OnlineTableSpec(
+            primary_key_columns=["booking_id"],
+            source_table_full_name=self.feature_table_name,
+            run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
+            perform_full_copy=False,
+        )
+        self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+
+    def deploy_or_update_serving_endpoint_with_retry(self, max_retries: int = 10, retry_interval: int = 30) -> None:
+        """Deploy or update a serving endpoint with retry mechanism.
+
+        :param max_retries: Maximum number of retry attempts
+        :param retry_interval: Time interval between retries in seconds
+        """
+        super().deploy_or_update_serving_endpoint_with_retry(
+            served_entities=self.served_entities, max_retries=max_retries, retry_interval=retry_interval
+        )
