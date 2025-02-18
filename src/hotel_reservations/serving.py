@@ -168,6 +168,24 @@ class FeatureServing(ServingBase):
             )
         ]
 
+    @staticmethod
+    def form_online_table(feature_table_name: str, primary_keys: list[str]) -> None:
+        """Create an online table from a feature table.
+
+        :param feature_table_name: The name of the source feature table
+        :param primary_keys: A list of primary key column names
+        """
+        spec = OnlineTableSpec(
+            primary_key_columns=primary_keys,
+            source_table_full_name=feature_table_name,
+            run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
+            perform_full_copy=False,
+        )
+
+        workspace = WorkspaceClient()
+        online_table_name = f"{feature_table_name}_online"
+        workspace.online_tables.create(name=online_table_name, spec=spec)
+
     def create_online_table(self) -> None:
         """Create an online table in Databricks.
 
@@ -176,13 +194,7 @@ class FeatureServing(ServingBase):
 
         :param self: The instance of the class containing this method.
         """
-        spec = OnlineTableSpec(
-            primary_key_columns=["booking_id"],
-            source_table_full_name=self.feature_table_name,
-            run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
-            perform_full_copy=False,
-        )
-        self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+        FeatureServing.form_online_table(feature_table_name=self.feature_table_name, primary_keys=["booking_id"])
 
     def create_feature_spec(self) -> None:
         """Create a feature specification for the model.
@@ -262,13 +274,7 @@ class FeatureLookupServing(ModelServing):
 
         :param self: The instance of the class containing this method.
         """
-        spec = OnlineTableSpec(
-            primary_key_columns=["booking_id"],
-            source_table_full_name=self.feature_table_name,
-            run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
-            perform_full_copy=False,
-        )
-        self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+        FeatureServing.form_online_table(feature_table_name=self.feature_table_name, primary_keys=["booking_id"])
 
     def deploy_or_update_serving_endpoint_with_retry(self, max_retries: int = 10, retry_interval: int = 30) -> None:
         """Deploy or update a serving endpoint with retry mechanism.

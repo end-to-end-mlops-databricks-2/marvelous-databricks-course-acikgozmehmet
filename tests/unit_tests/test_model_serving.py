@@ -76,7 +76,7 @@ def test_model_serving_api_call(deployed_model_serving: ModelServing) -> None:
     ]
 
     status_code, response_text = call_endpoint(
-        endpoint_name=deployed_model_serving.endpoint_name, record=dataframe_records
+        endpoint_name=deployed_model_serving.endpoint_name, records=dataframe_records
     )
 
     assert status_code == 200
