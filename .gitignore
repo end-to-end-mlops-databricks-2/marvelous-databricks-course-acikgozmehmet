@@ -99,13 +99,12 @@ dmypy.json
 .databricks
 
 # Custom project settings
+.databricks
 databricks.yml
 uv.lock
 tests/**/*.whl
+src/**/commit_sha.txt
 src/hotel_reservations/data/commit_sha.txt
 class_diagrams
-
-.databricks
 payload/**
 mlruns/**
-tests/unit_tests/sakla.zip

@@ -127,15 +127,15 @@ def get_current_git_sha() -> str:
     """Retrieve the current Git commit SHA from a file.
 
     This function reads the Git commit SHA from a file named 'commit_sha.txt' located in the 'data' directory.
+    If the file doesn't exist, it returns a formatted datetime string instead.
 
-    :return: The Git commit SHA as a string
-    :raises FileNotFoundError: If the commit_sha.txt file does not exist
+    :param: None
+    :return: The Git commit SHA as a string or a formatted datetime string
+    :raises FileNotFoundError: If the commit_sha.txt file does not exist and cannot be read
     """
     file_path = pathlib.Path(__file__).parent / "data" / "commit_sha.txt"
-    if not file_path.exists():
-        raise FileNotFoundError(f"The file {file_path.as_posix()} does not exist")
-
-    git_sha = file_path.read_text(encoding="utf-8")
+    formatted_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
+    git_sha = formatted_datetime if not file_path.exists() else file_path.read_text(encoding="utf-8")
     return git_sha.strip()
 
 

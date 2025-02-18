@@ -160,7 +160,6 @@ class FeatureServing(ServingBase):
         super().__init__(endpoint_name)
         self.feature_table_name = feature_table_name
         self.feature_spec_name = feature_spec_name
-        self.online_table_name = f"{feature_table_name}_online"
         self.fe = feature_engineering.FeatureEngineeringClient()
         self.served_entities = [
             ServedEntityInput(
@@ -170,7 +169,7 @@ class FeatureServing(ServingBase):
 
     @staticmethod
     def form_online_table(feature_table_name: str, primary_keys: list[str]) -> None:
-        """Create an online table from a feature table.
+        """Create an online table from a feature table with a standard name.
 
         :param feature_table_name: The name of the source feature table
         :param primary_keys: A list of primary key column names
@@ -242,7 +241,6 @@ class FeatureLookupServing(ModelServing):
 
     Attributes:
         feature_table_name (str): Name of the feature table.
-        online_table_name (str): Name of the online table derived from the feature table.
 
     """
 
@@ -262,9 +260,10 @@ class FeatureLookupServing(ModelServing):
         :param workload_size: Size of the workload, defaults to "Small"
         :param scale_to_zero: Whether to scale to zero, defaults to True
         """
-        super().__init__(model_name, endpoint_name)
+        super().__init__(
+            model_name=model_name, endpoint_name=endpoint_name, workload_size=workload_size, scale_to_zero=scale_to_zero
+        )
         self.feature_table_name = feature_table_name
-        self.online_table_name = f"{self.feature_table_name}_online"
 
     def create_online_table(self) -> None:
         """Create an online table in Databricks.
