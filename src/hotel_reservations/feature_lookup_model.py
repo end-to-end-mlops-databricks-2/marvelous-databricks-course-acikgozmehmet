@@ -115,13 +115,20 @@ class FeatureLookUpModel:
             "no_of_previous_bookings_not_canceled",
         ]
 
-        self.train_set_spark = spark.table(f"{self.catalog_name}.{self.schema_name}.train_set").drop(*drop_list)
+        # self.train_set_spark = spark.table(f"{self.catalog_name}.{self.schema_name}.train_set").drop(*drop_list)  # noqa
+        self.train_set_spark = spark.table(f"{self.catalog_name}.{self.schema_name}.train_set")
+        features_target = [
+            self.num_features + self.cat_features + [self.target] + ["date_of_booking", "date_of_arrival", "booking_id"]
+        ]
+        self.train_set_spark = self.train_set_spark.select(*features_target).drop(*drop_list)
         # self.train_set = self.train_set_spark.toPandas()  # noqa
         self.train_set = self.train_set_spark
         self.test_set = spark.table(f"{self.catalog_name}.{self.schema_name}.test_set").toPandas()
 
         data_version = get_delta_table_version(self.catalog_name, self.schema_name, "train_set")
         self.data_version = str(data_version) if is_databricks() else "0"
+
+        logger.info(self.train_set.head(4))
 
         logger.info(f"✅ Data successfully loaded by dropping {', '.join(drop_list)}.")
 

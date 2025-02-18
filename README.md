@@ -106,3 +106,62 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
     *   **Databricks-Centric:** Designed specifically for Databricks environments, leveraging the Feature Engineering Client, Spark for data handling, and Unity Catalog for model and feature governance.
 *   **Workflow:**  The module orchestrates a feature-rich machine learning pipeline: creating feature tables and functions, loading data and enriching it with Feature Lookups, training an LGBMClassifier model, logging metadata and performance to MLflow, and registering the model in Unity Catalog.
 *   **Use Case:**  Well-suited for projects that require advanced feature engineering capabilities, such as feature sharing, feature reuse, and automated feature management within Databricks. It's ideal for scenarios where feature tables are managed separately and need to be dynamically joined with training data.
+
+
+
+### Model Serving Architectures
+
+![Serving](./images/serving.png)
+
+### `ServingBase` Module
+
+*   The **`ServingBase`** class provides a foundational abstraction for managing Databricks Model Serving endpoints. It encapsulates the core logic for deploying, updating, and deleting serving endpoints through the Databricks SDK, offering a simplified interface for endpoint management. This base class ensures reliable and robust endpoint operations.
+*   **Key Features:**
+
+    *   **Databricks SDK Integration:** Leverages the Databricks SDK to interact with the Databricks Model Serving API, simplifying endpoint creation and management within a Databricks workspace.
+    *   **Endpoint Deployment and Updates:** Offers methods to deploy new serving endpoints or update existing ones, handling the underlying API calls and configuration management.
+    *   **Conflict Resolution with Retry Mechanism:** Includes a robust retry mechanism to handle resource conflicts that may occur during endpoint updates. This ensures endpoint deployment even under concurrent update attempts.
+    *   **Error Handling:** Provides error handling for common serving endpoint operations such as deletion.
+    *   **Workspace Client Initialization:** Automatically initializes the Databricks Workspace client for seamless interaction with the Databricks environment.
+*   **Workflow:** The module simplifies the process of managing Databricks serving endpoints, handling the complexities of the Databricks SDK and implementing best practices for robust deployment.
+*   **Use Case:** The `ServingBase` class serves as a base class for all types of serving configurations making it easy to deploy and manage serving endpoints in Databricks. It provides a centralized approach for deployment and management.
+
+
+####  `ModelServing` Module
+
+*   The **`ModelServing`** class extends the `ServingBase` class, providing a specialized solution for deploying and managing MLflow model serving endpoints within Databricks. It simplifies the process of serving registered models, particularly those produced by the `BasicModel` and `FeatureLookUpModel` classes, and leverages the established endpoint management capabilities of `ServingBase`.
+*   **Key Features:**
+
+    *   **Model Deployment Specialization:** Provides a streamlined way to deploy registered models managed within MLflow and Unity Catalog as serving endpoints in Databricks.
+    *   **Automated Version Retrieval:** Automatically retrieves the latest version of a registered model from MLflow using the "latest-model" alias, ensuring that the most up-to-date model is deployed.
+    *   **Serving Endpoint Configuration:** Allows configuration of the serving endpoint's workload size and scaling behavior (scale-to-zero), optimizing resource utilization and cost efficiency.
+    *   **ServingBase Integration:** Inherits deployment and update functionalities, including retry mechanisms, from the `ServingBase` class, providing a robust and reliable endpoint management foundation.
+*   **Workflow:** The module automates the creation or updating of a Databricks serving endpoint for a specific MLflow model, retrieving the latest version, configuring the endpoint's resources, and deploying it using the `ServingBase` class.
+*   **Use Case:** Ideal for scenarios where you need to deploy MLflow models (such as those trained using the `BasicModel` or `FeatureLookUpModel` classes) as real-time serving endpoints in Databricks. This class simplifies the deployment process, automates version management, and ensures reliable endpoint operation, making it easy to serve your machine learning models. It is generally used in tandem with the other modules mentioned to complete the lifecycle.
+
+
+#### `FeatureServing` Module
+
+*   The **`FeatureServing`** class, extending `ServingBase`, is designed to facilitate the serving of features created and managed using the Databricks Feature Engineering Client, specifically for real-time inference scenarios. It complements the `FeatureLookUpModel` by enabling the deployment of feature transformations and lookups as a managed serving endpoint, decoupling feature computation from model serving. This allows for consistent feature serving.
+*   **Key Features:**
+    *   **Feature Specification Management:** Creates and manages feature specifications using the Databricks Feature Engineering Client, defining the features to be served.
+    *   **Online Table Creation:** Automatically creates online feature tables from offline feature tables, making features available for low-latency access during inference, with the features created by `FeatureLookUpModel`.
+    *   **Databricks Serving Endpoint Deployment:** Deploys the feature specification as a Databricks serving endpoint, enabling real-time feature computation and serving. Leverages functionality of `ServingBase` class.
+    *   **Integration with Databricks Feature Engineering Client:** Seamlessly integrates with the Databricks Feature Engineering Client for feature creation, management, and serving.
+*   **Workflow:** The module automates the process of creating online tables, defining feature specifications, and deploying a serving endpoint for real-time feature access. It creates the online table from the existing offline feature table.
+*   **Use Case:** Ideal for situations in which features from the Databricks Feature Store need to be served in real-time. The `FeatureServing` class is the tool to serve features for online use.
+
+ #### `FeatureLookupServing` Module
+
+*   The `FeatureLookupServing` class extends the `ModelServing` class to provide a streamlined approach for serving models that rely on feature lookups from online feature tables. It simplifies the process of creating and managing these online tables and deploying serving endpoints that incorporate real-time feature data, allowing the model to serve the most current information from the Feature Store created by the Databricks Feature Engineering Client.
+
+*   **Key Features:**
+
+    *   **Online Table Management:** Automates the creation of online feature tables from existing offline feature tables in Databricks, enabling low-latency access to features for real-time inference.
+    *   **Feature Lookup Integration:** Designed to work seamlessly with models trained using features from Databricks Feature Store (as demonstrated in the `FeatureLookUpModel` class).
+    *   **Model Serving with Real-time Features:** Deploys and manages serving endpoints that dynamically retrieve features from online tables during inference, ensuring the model uses the latest available data.
+    *   **ServingBase and ModelServing Inheritance:** Inherits endpoint deployment, update, and retry functionalities from both `ServingBase` and `ModelServing`, providing a robust and reliable endpoint management foundation.
+
+*   **Workflow:** The module simplifies the deployment of models (trained to use features created via Databricks Feature Engineering) by managing the process of creating the online feature tables and deploying the model with feature lookups.
+
+*   **Use Case:** Ideal for deploying models trained using the Databricks Feature Engineering Client in real-time inference scenarios. This ensures that models have access to the freshest feature data, leading to more accurate and reliable predictions. It is used in cases where the feature table is updated frequently, and the model needs to respond to the newest feature values. The module can be used to quickly spin up the serving endpoint for the model.

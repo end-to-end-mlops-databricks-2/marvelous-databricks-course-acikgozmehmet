@@ -6,8 +6,10 @@ import sys
 from datetime import datetime
 from typing import Any
 
+import requests
 from delta.tables import DeltaTable
 from loguru import logger
+from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
 
 
@@ -125,13 +127,63 @@ def get_current_git_sha() -> str:
     """Retrieve the current Git commit SHA from a file.
 
     This function reads the Git commit SHA from a file named 'commit_sha.txt' located in the 'data' directory.
+    If the file doesn't exist, it returns a formatted datetime string instead.
 
-    :return: The Git commit SHA as a string
-    :raises FileNotFoundError: If the commit_sha.txt file does not exist
+    :param: None
+    :return: The Git commit SHA as a string or a formatted datetime string
+    :raises FileNotFoundError: If the commit_sha.txt file does not exist and cannot be read
     """
     file_path = pathlib.Path(__file__).parent / "data" / "commit_sha.txt"
-    if not file_path.exists():
-        raise FileNotFoundError(f"The file {file_path.as_posix()} does not exist")
-
-    git_sha = file_path.read_text(encoding="utf-8")
+    formatted_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
+    git_sha = formatted_datetime if not file_path.exists() else file_path.read_text(encoding="utf-8")
     return git_sha.strip()
+
+
+def call_endpoint(endpoint_name: str, records: list[dict]) -> tuple[int, str]:
+    """Call a serving endpoint with the given endpoint name and record data.
+
+    :param endpoint_name: The name of the serving endpoint to call
+    :param record: A list of dictionaries containing the data to send to the endpoint
+    :return: A tuple containing the response status code and text
+    """
+    serving_endpoint = f"https://{os.environ['DBR_HOST']}/serving-endpoints/{endpoint_name}/invocations"
+
+    response = requests.post(
+        serving_endpoint,
+        headers={"Authorization": f"Bearer {os.environ['DBR_TOKEN']}"},
+        json={"dataframe_records": records},
+    )
+    return response.status_code, response.text
+
+
+def get_dbr_token() -> str:
+    """Retrieve the Databricks API token.
+
+    This function obtains the API token from the Databricks notebook context.
+
+    :return: The Databricks API token as a string.
+    :raises ValueError: If not running in a Databricks environment.
+    Important note: Never use your personal databricks token in real application. Create Service Principal instead.
+    This is just for testing purposes
+    """
+    if is_databricks():
+        spark = SparkSession.builder.getOrCreate()
+        dbutils = DBUtils(spark)
+        return dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
+    else:
+        raise ValueError("This function is only supported on Databricks.")
+
+
+def get_dbr_host() -> str:
+    """Retrieve the Databricks workspace URL.
+
+    This function obtains the workspace URL from Spark configuration.
+
+    :return: The Databricks workspace URL as a string.
+    :raises ValueError: If not running in a Databricks environment.
+    """
+    if is_databricks():
+        spark = SparkSession.builder.getOrCreate()
+        return spark.conf.get("spark.databricks.workspaceUrl")
+    else:
+        raise ValueError("This function is only supported on Databricks.")

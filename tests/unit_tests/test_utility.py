@@ -168,3 +168,25 @@ def test_get_current_git_sha() -> None:
     git_sha = get_current_git_sha()
     assert git_sha
     print(f"Get current git {git_sha}")
+
+
+def test_get_current_git_sha_when_file_not_found() -> None:
+    """Test the get_current_git_sha function when the commit_sha.txt file is not found.
+
+    This function temporarily renames the commit_sha.txt file, calls get_current_git_sha,
+    and then restores the original file name.
+
+    :raises AssertionError: If get_current_git_sha returns None or an empty string.
+    """
+    file_path = PROJECT_DIR / "src" / "hotel_reservations" / "data" / "commit_sha.txt"
+    if file_path.exists():
+        new_file_path = file_path.with_name(file_path.name + "1")
+        try:
+            file_path.rename(new_file_path)
+
+            git_sha = get_current_git_sha()
+            assert git_sha.startswith("202")
+        finally:
+            if new_file_path and new_file_path.exists():
+                new_file_path.rename(file_path)
+            print(f"{git_sha = }")
