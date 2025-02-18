@@ -106,3 +106,14 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
     *   **Databricks-Centric:** Designed specifically for Databricks environments, leveraging the Feature Engineering Client, Spark for data handling, and Unity Catalog for model and feature governance.
 *   **Workflow:**  The module orchestrates a feature-rich machine learning pipeline: creating feature tables and functions, loading data and enriching it with Feature Lookups, training an LGBMClassifier model, logging metadata and performance to MLflow, and registering the model in Unity Catalog.
 *   **Use Case:**  Well-suited for projects that require advanced feature engineering capabilities, such as feature sharing, feature reuse, and automated feature management within Databricks. It's ideal for scenarios where feature tables are managed separately and need to be dynamically joined with training data.
+
+
+
+### Serving Module Overview
+
+This module provides a set of classes designed to streamline the deployment and management of serving endpoints within a Databricks environment. It includes functionalities for deploying models, managing feature serving, and setting up feature lookups for models. Key features include:
+
+*   **ServingBase Class:** A foundational class that handles the core logic for deploying and updating serving endpoints. It includes methods for creating, updating, and deleting endpoints using the Databricks SDK, with built-in retry mechanisms to handle potential resource conflicts.
+*   **ModelServing Class:** Extends the `ServingBase` class to specifically manage model serving operations. It allows for easy deployment and updating of model serving endpoints, automatically retrieves the latest model version, and configures the serving endpoint with specified workload size and scaling options.
+*   **FeatureServing Class:** Manages feature serving by creating online tables and feature specifications. It automates the process of setting up feature lookups and deploying serving endpoints for features, ensuring that models have access to the latest feature data.
+*   **FeatureLookupServing Class:** Inherits from `ModelServing` and extends its functionality by incorporating feature lookups. It creates and manages online tables for feature data and deploys serving endpoints that utilize these features, streamlining the process of serving models that rely on feature lookups.

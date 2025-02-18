@@ -1,6 +1,7 @@
 """Serving Module."""
 
 import time
+from datetime import timedelta
 
 import mlflow
 from databricks import feature_engineering
@@ -66,7 +67,9 @@ class ServingBase:
         for attempt in range(max_retries):
             try:
                 self.workspace.serving_endpoints.update_config_and_wait(
-                    name=f"{self.endpoint_name}", served_entities=served_entities
+                    name=f"{self.endpoint_name}",
+                    served_entities=served_entities,
+                    timeout=timedelta(seconds=retry_interval),
                 )
                 logger.info("Deployment successful")
                 return
