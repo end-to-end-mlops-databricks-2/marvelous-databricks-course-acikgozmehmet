@@ -139,7 +139,7 @@ def get_current_git_sha() -> str:
     return git_sha.strip()
 
 
-def call_endpoint(endpoint_name: str, record: list[dict]) -> tuple[int, str]:
+def call_endpoint(endpoint_name: str, records: list[dict]) -> tuple[int, str]:
     """Call a serving endpoint with the given endpoint name and record data.
 
     :param endpoint_name: The name of the serving endpoint to call
@@ -151,7 +151,7 @@ def call_endpoint(endpoint_name: str, record: list[dict]) -> tuple[int, str]:
     response = requests.post(
         serving_endpoint,
         headers={"Authorization": f"Bearer {os.environ['DBR_TOKEN']}"},
-        json={"dataframe_records": record},
+        json={"dataframe_records": records},
     )
     return response.status_code, response.text
 
