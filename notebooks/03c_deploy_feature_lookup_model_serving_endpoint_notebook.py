@@ -10,6 +10,7 @@
 import os
 import pathlib
 import time
+import json
 
 # Third-party library imports
 import mlflow
@@ -111,6 +112,7 @@ feature_model_server.deploy_or_update_serving_endpoint_with_retry(retry_interval
 # COMMAND ----------
 # Let's test the endpoint
 #  note following list does not contain ->"repeated_guest", "no_of_previous_cancellations", "no_of_previous_bookings_not_canceled",
+#  added extra required fields such as  "booking_id", "date_of_booking","date_of_arrival"
 required_columns = [
     "no_of_adults",
     "no_of_children",
@@ -121,7 +123,10 @@ required_columns = [
     "avg_price_per_room",
     "no_of_special_requests",
     "type_of_meal_plan",
-    "room_type_reserved"
+    "room_type_reserved",
+    "booking_id",
+    "date_of_booking",
+    "date_of_arrival"
 ]
 
 # COMMAND ----------
@@ -134,11 +139,16 @@ sampled_records = test_set[required_columns].sample(n=100, replace=True).to_dict
 display(sampled_records)
 
 # COMMAND ----------
-dataframe_records = [[rec] for rec in sampled_records]
-logger.info(dataframe_records)
+json_string = json.dumps(sampled_records, default=str)
+dataframe_records=json.loads(json_string)
+display(dataframe_records)
 
 # COMMAND ----------
-status_code, response_text = call_endpoint(endpoint_name, dataframe_records[0])
+json_string = json.dumps(sampled_records, default=str)
+dataframe_records=json.loads(json_string)
+
+# COMMAND ----------
+status_code, response_text = call_endpoint(endpoint_name, dataframe_records)
 logger.info(f"{status_code = }")
 logger.info(f"{response_text = }")
 
