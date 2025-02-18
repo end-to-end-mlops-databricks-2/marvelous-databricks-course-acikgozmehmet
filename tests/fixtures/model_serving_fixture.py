@@ -44,7 +44,7 @@ def deployed_model_serving(model_serving: ModelServing) -> ModelServing:
     """
     os.environ["DBR_TOKEN"] = get_dbr_token()
     os.environ["DBR_HOST"] = get_dbr_host()
-    model_serving.deploy_or_update_serving_endpoint_with_retry()
+    model_serving.deploy_or_update_serving_endpoint_with_retry(retry_interval=60)
 
     yield model_serving
 
