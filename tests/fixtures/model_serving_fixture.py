@@ -11,7 +11,7 @@ from hotel_reservations.utility import get_dbr_host, get_dbr_token
 from tests.consts import PROJECT_DIR
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def model_serving() -> ModelServing:
     """Fixture to create and configure a `ModelServing` instance for testing purposes.
 
@@ -35,7 +35,7 @@ def model_serving() -> ModelServing:
     return model
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def deployed_model_serving(model_serving: ModelServing) -> ModelServing:
     """Deploy or update a model serving endpoint and yield the ModelServing instance.
 

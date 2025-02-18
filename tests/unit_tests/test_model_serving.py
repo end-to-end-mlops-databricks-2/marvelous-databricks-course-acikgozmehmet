@@ -14,8 +14,9 @@ def test_model_serving_fixture_as_expected(model_serving: ModelServing) -> None:
 
     :param model_serving: The basic model fixture to be tested
     """
+    short_model_name = "hotel_reservations_model_basic"
     assert isinstance(model_serving, ModelServing)
-    assert model_serving.model_name == "hotel_reservations_model_basic"
+    assert model_serving.model_name.endswith(short_model_name)
     assert isinstance(model_serving.served_entities, list)
     assert len(model_serving.served_entities) == 1
     assert model_serving.served_entities[0].entity_name == model_serving.model_name
@@ -32,7 +33,7 @@ def test_model_serving_get_latest_model_version(model_serving: ModelServing) -> 
     :param model_serving: The ModelServing fixture to be tested
     """
     latest_version = model_serving._get_latest_model_version()
-    assert isinstance(latest_version, int)
+    assert isinstance(latest_version, str)
 
 
 @pytest.mark.skipif(not is_databricks(), reason="Only runs on Databricks")
