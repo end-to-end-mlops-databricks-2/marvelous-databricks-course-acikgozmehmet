@@ -285,3 +285,40 @@ def test_split_and_extract_data(dataloader: DataLoader) -> None:
     assert "Online" not in extra_set["market_segment_type"].unique().tolist()
     assert dataloader.df["market_segment_type"].nunique() == 1
     assert "Online" in dataloader.df["market_segment_type"].unique().tolist()
+
+
+def test_synthesize(dataloader: DataLoader, tmp_path: pathlib.Path) -> None:
+    """Test the synthesize method of the dataloader.
+
+    This function tests if the synthesize method of the dataloader generates
+    the correct number of rows and columns in the output CSV file.
+
+    :param dataloader: The dataloader object with a synthesize method and a df attribute
+    :param tmp_path: A temporary path object for creating the output file
+    """
+    expected_col_number = dataloader.df.shape[1]
+    num_rows = 10
+    output_filename = (tmp_path / "delete_me.csv").as_posix()
+    dataloader.synthesize(output_filename=output_filename, num_rows=num_rows)
+
+    actual_df = pd.read_csv(output_filename)
+    actual_shape = actual_df.shape
+    assert actual_shape == (10, expected_col_number)
+
+
+def test_synthesize_delete_self(dataloader: DataLoader, tmp_path: pathlib.Path) -> None:
+    """Test the synthesize method of the DataLoader and verify self-deletion.
+
+    This function tests if the DataLoader's synthesize method generates the expected output
+    and if it properly deletes its internal attributes after execution.
+
+    :param dataloader: The DataLoader instance to test
+    :param tmp_path: A temporary path for output file creation
+    """
+    num_rows = 10
+    output_filename = (tmp_path / "delete_me.csv").as_posix()
+    dataloader.synthesize(output_filename=output_filename, num_rows=num_rows)
+
+    assert not hasattr(dataloader, "df")
+    assert not hasattr(dataloader, "config")
+    assert len(dataloader.__dict__) == 0

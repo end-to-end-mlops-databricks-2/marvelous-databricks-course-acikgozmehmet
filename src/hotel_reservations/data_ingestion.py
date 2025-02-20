@@ -1,6 +1,8 @@
 """Data cleaning for credit default data using Spark."""
 # pylint disable=invalid-name
 
+import uuid
+
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -342,6 +344,93 @@ class DataLoader:
             logger.info("Extra data saved to catalog successfully as well.")
 
         logger.info("Train and test data saved to catalog successfully")
+
+    def synthesize(self, output_filename: str, num_rows: int = 10) -> None:
+        """Synthesize data and save it to a CSV file.
+
+        This method processes the DataFrame, generates synthetic data, and saves the result to a CSV file.
+
+        :param output_filename: The name of the output CSV file
+        :param num_rows: The number of rows to generate in the synthetic data, defaults to 10
+        """
+        # columns order
+        columns_order = self.df.columns.tolist()
+        #  drop nan values from df
+        self.df.dropna(inplace=True)
+
+        #  _validate_required_columns
+        self._validate_required_columns()
+
+        # rename columns
+        self._rename_columns()
+
+        # convert data types
+        self._convert_column_data_types()
+
+        # query only market_segment_type = 'online'
+        self.df = self.df.query("market_segment_type == 'Online'")
+
+        self.df = self._generate_synthetic_data(num_rows)
+        self._convert_column_data_types()
+
+        # validate_data_types
+        self._validate_data_types()
+
+        # back to original column names
+        for col in self.config.num_features + self.config.cat_features + [self.config.target]:
+            self.df.rename(columns={col.alias: col.name}, inplace=True)
+
+        # reorder  the columns
+        self.df = self.df[columns_order]
+
+        # save the result to output file
+        self.df.to_csv(output_filename, index=False)
+        logger.info(f"Synthetic data saved to {output_filename}")
+
+        self._delete_self()
+        logger.info(
+            "Disclaimer: The object has changed the state and not usable anymore. Do not use this object anymore."
+        )
+
+    def _generate_synthetic_data(self, num_rows: int) -> pd.DataFrame:
+        """Generate synthetic data based on the configuration and original dataframe.
+
+        This method creates synthetic data for numerical and categorical features,
+        including a special case for generating unique booking IDs.
+
+        :param num_rows: The number of rows to generate in the synthetic dataset
+        :return: A pandas DataFrame containing the generated synthetic data
+        """
+        # synthetic data logic implementation
+        synthetic_data = pd.DataFrame()
+        for col in self.config.num_features:
+            synthetic_data[col.alias] = np.round(
+                np.abs(np.random.normal(self.df[col.alias].mean(), self.df[col.alias].std(), size=num_rows)), decimals=2
+            )
+        rng = np.random.default_rng()
+        for col in self.config.cat_features + [self.config.target]:
+            if col.alias == "booking_id":
+                synthetic_data["booking_id"] = [str(uuid.uuid4()) for i in range(num_rows)]
+            else:
+                # Get unique values and their probabilities
+                unique_values = self.df[col.alias].unique()
+                probabilities = self.df[col.alias].value_counts(normalize=True).reindex(unique_values).fillna(0)
+
+                # Ensure probabilities sum to 1
+                probabilities = probabilities / probabilities.sum()
+
+                synthetic_data[col.alias] = rng.choice(unique_values, size=num_rows, p=probabilities)
+        return synthetic_data
+
+    def _delete_self(self) -> None:
+        """Remove all references to self by deleting all attributes.
+
+        This method iterates through all attributes of the object and deletes them using the delattr function.
+        Important Note: This is necessary for the synthesize() method since it makes the object unusable after called.
+        """
+        # Remove all references to self
+        for attr in list(self.__dict__.keys()):
+            delattr(self, attr)
 
 
 if __name__ == "__main__":
