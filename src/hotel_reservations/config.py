@@ -110,12 +110,15 @@ class Config(BaseModel):
     target: Target
     features: Feature
     model: Model
+    # This allows the pipeline_id field to be omitted without explicitly setting it to None
+    pipeline_id: str = Field(default=None)  # Optional[str] = None
 
     @classmethod
-    def from_yaml(cls, config_file: str) -> Config:
+    def from_yaml(cls, config_file: str, env: str = "dev") -> Config:
         """Load the configuration from a specified YAML file.
 
         :param config_file: The path to the YAML configuration file.
+        :param env: The environment to load the configuration from (default: 'dev').
         :return: An instance of Config populated with the loaded data.
         :raises FileNotFoundError: If the configuration file does not exist.
         :raises yaml.YAMLError: If there is an error parsing the YAML file.
@@ -124,6 +127,11 @@ class Config(BaseModel):
         try:
             with open(config_file, encoding="utf-8") as file:
                 config_data = yaml.safe_load(file)
+
+            config_data["catalog_name"] = config_data[env]["catalog_name"]
+            config_data["schema_name"] = config_data[env]["schema_name"]
+            config_data["pipeline_id"] = config_data[env]["pipeline_id"]
+
             config = Config(**config_data)
             logger.info(f"Loaded configuration from {config_file}")
             return config

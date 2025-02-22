@@ -15,6 +15,8 @@ from databricks.sdk.service.catalog import (
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
 from loguru import logger
 
+from hotel_reservations.config import Config
+
 # model_name -> full_model_name
 
 
@@ -282,3 +284,32 @@ class FeatureLookupServing(ModelServing):
         :param retry_interval: Time interval between retries in seconds
         """
         super().deploy_or_update_serving_endpoint_with_retry(max_retries=max_retries, retry_interval=retry_interval)
+
+    def update_online_table(self, config: Config) -> None:
+        """Update the online table using the specified pipeline configuration.
+
+        This function starts a pipeline update and monitors its progress until completion or failure.
+
+        :param config: Configuration object containing pipeline details.
+        :raises SystemError: If the online table update fails.
+        """
+        update_response = self.workspace.pipelines.start_update(pipeline_id=config.pipeline_id, full_refresh=False)
+
+        while True:
+            update_info = self.workspace.pipelines.get_update(
+                pipeline_id=config.pipeline_id, update_id=update_response.update_id
+            )
+            state = update_info.update.state.value
+
+            if state == "COMPLETED":
+                logger.info("Online table update completed successfully.")
+                break
+            elif state in ["FAILED", "CANCELED"]:
+                logger.error("Pipeline update failed")
+                raise SystemError("Online table update failed.")
+            elif state == "WAITING_FOR_RESOURCES":
+                logger.warning(f"Pipeline is in {state}.")
+            else:
+                logger.info(f"Pipeline is in {state}.")
+
+            time.sleep(30)

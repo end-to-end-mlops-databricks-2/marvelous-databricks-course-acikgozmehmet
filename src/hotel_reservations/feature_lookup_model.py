@@ -266,3 +266,78 @@ class FeatureLookUpModel:
         model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)
         return predictions
+
+    def update_feature_table(self) -> None:
+        """Update the feature table with data from train and test sets.
+
+        This function executes SQL queries to insert the latest data from train and test sets
+        into the feature table based on the maximum update timestamp.
+
+        :param spark: SparkSession object to execute SQL queries
+        """
+        queries = [
+            f"""
+            WITH max_timestamp AS (
+            SELECT MAX(update_timestamp_utc) AS max_update_timestamp
+            FROM {self.catalog_name}.{self.schema_name}.train_set
+            )
+            INSERT INTO {self.feature_table_name}
+            SELECT booking_id, repeated_guest, no_of_previous_cancellations, no_of_previous_bookings_not_canceled
+            FROM {self.catalog_name}.{self.schema_name}.train_set
+            WHERE update_timestamp_utc = (SELECT max_update_timestamp FROM max_timestamp)
+            """,
+            f"""
+            WITH max_timestamp AS (
+            SELECT MAX(update_timestamp_utc) AS max_update_timestamp
+            FROM {self.catalog_name}.{self.schema_name}.test_set
+            )
+            INSERT INTO {self.feature_table_name}
+            SELECT booking_id, repeated_guest, no_of_previous_cancellations, no_of_previous_bookings_not_canceled
+            FROM {self.catalog_name}.{self.schema_name}.test_set
+            WHERE update_timestamp_utc = (SELECT max_update_timestamp FROM max_timestamp)
+            """,
+        ]
+
+        for count, query in enumerate(queries, start=1):
+            logger.info(f"Executing SQL update for query {count}...")
+            spark.sql(query)
+        logger.info(f"{self.feature_table_name} feature table updated successfully\n")
+
+    def should_register_new_model(self, test_set: DataFrame) -> bool:
+        """Evaluate the current model against the latest registered model.
+
+        Compares the performance of the current model with the latest registered model
+        using some metrics (such as accuracy and ROC AUC scores) on the test set.
+
+        :param test_set: The test dataset containing features and target variable
+        :return: True if the current model performs better, False otherwise
+        """
+        X_test = test_set.drop(self.target)
+        y_test = test_set[self.target]
+
+        # Make predictions by loading the latest model from MLflow using Feature Engineering Client
+        predictions_latest = self.load_latest_model_and_predict(X_test)
+        accuracy_latest = accuracy_score(y_test, predictions_latest)
+        auc_latest = roc_auc_score(y_test, predictions_latest)
+
+        logger.info(f"Accuracy score for latest (registered) model: {accuracy_latest}")
+        logger.info(f"ROC_AUC score  for latest (registered) model: {auc_latest}")
+
+        # Make predictions with current model using Feature Engineering Client
+        current_model_uri = f"runs:/{self.run_id}/{self.model_artifact_path}"
+        predictions_current = self.fe.score_batch(model_uri=current_model_uri, df=X_test)
+        accuracy_current = accuracy_score(y_test, predictions_current)
+        auc_current = roc_auc_score(y_test, predictions_current)
+
+        logger.info(f"Accuracy score for current model: {accuracy_current}")
+        logger.info(f"ROC_AUC score  for current model: {auc_current}")
+
+        # Compare two models to pick the better one
+        if accuracy_current > accuracy_latest:
+            logger.info("Current model performs better than the latest (registered) model")
+            return True
+        else:
+            logger.info(
+                "Latest (registered) model performs better than the current model. Keeping the latest (registered) one"
+            )
+            return False

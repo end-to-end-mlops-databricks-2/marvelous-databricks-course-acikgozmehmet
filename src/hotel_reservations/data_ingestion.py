@@ -318,10 +318,10 @@ class DataLoader:
 
         # spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.config.catalog_name}.{self.config.schema_name}") #noqa ERA
 
-        train_set_with_timestamp.write.mode("overwrite").saveAsTable(
+        train_set_with_timestamp.write.mode("append").saveAsTable(
             f"{self.config.catalog_name}.{self.config.schema_name}.train_set"
         )
-        test_set_with_timestamp.write.mode("overwrite").saveAsTable(
+        test_set_with_timestamp.write.mode("append").saveAsTable(
             f"{self.config.catalog_name}.{self.config.schema_name}.test_set"
         )
 
@@ -336,7 +336,7 @@ class DataLoader:
             extra_set_with_timestamp = spark.createDataFrame(extra_set).withColumn(
                 "update_timestamp_utc", F.to_utc_timestamp(F.current_timestamp(), "UTC")
             )
-            extra_set_with_timestamp.write.mode("overwrite").saveAsTable(
+            extra_set_with_timestamp.write.mode("append").saveAsTable(
                 f"{self.config.catalog_name}.{self.config.schema_name}.extra_set"
             )
             spark.sql(
@@ -441,15 +441,15 @@ class DataFabricator:
 
         return payload.df
 
-    def to_csv(self, dataframe: pd.DataFrame, output_filename: str) -> None:
-        """Save the synthetic dataframe to a CSV file.
+    @staticmethod
+    def to_csv(dataframe: pd.DataFrame, output_filename: str) -> None:
+        """Save a pandas DataFrame to a CSV file.
 
-        :param dataframe: The pandas DataFrame to save
+        :param dataframe: The DataFrame to be saved
         :param output_filename: The name of the output CSV file
         """
-        # save the result to output file
         dataframe.to_csv(output_filename, index=False)
-        logger.info(f"Synthetic data saved to {output_filename}")
+        logger.info(f"Dataframe saved to {output_filename}")
 
     def _generate_synthetic_data(self, payload: DataLoader, num_rows: int) -> pd.DataFrame:
         """Generate synthetic data based on the configuration and original dataframe.

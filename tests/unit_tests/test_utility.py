@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 import yaml
 from loguru import logger
-from pydantic import ValidationError
 
 from hotel_reservations.config import Config
 from hotel_reservations.utility import (
@@ -87,7 +86,7 @@ def test_load_config_missing_required_field(tmp_path: pathlib.Path) -> None:
     with open(config_file, "w", encoding="utf-8") as file:
         yaml.dump(config_data, file)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(KeyError):
         Config.from_yaml(config_file.as_posix())
 
 
