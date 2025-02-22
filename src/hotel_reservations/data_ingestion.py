@@ -220,13 +220,12 @@ class DataLoader:
     def _create_date_of_booking_column(self) -> None:
         """Create a new column 'date_of_booking' by subtracting 'lead_time' from 'date_of_arrival'."""
         self.df["date_of_arrival"] = pd.to_datetime(self.df["date_of_arrival"])
-        self.df["lead_time"] = pd.to_timedelta(self.df["lead_time"], unit="D")  # noqa
-        self.df["date_of_booking"] = self.df["date_of_arrival"] - self.df["lead_time"]  # noqa
+        self.df["lead_time"] = pd.to_timedelta(self.df["lead_time"], unit="D")
+        self.df["date_of_booking"] = (self.df["date_of_arrival"] - self.df["lead_time"]).dt.date
+
+        self.df["date_of_arrival"] = pd.to_datetime(self.df["date_of_arrival"]).dt.date  # noqa
+        # self.df["date_of_booking"] = pd.to_datetime(self.df["date_of_booking"]).dt.date  # noqa
         self.df["lead_time"] = self.df["lead_time"].dt.days.astype("int16")
-
-        # self.df.drop(columns=["lead_time_x"], inplace=True) # noqa
-        # self.df["date_of_booking"] = self.df["date_of_arrival"] - pd.to_timedelta(self.df["lead_time"], unit="D")  # noqa
-
         logger.info("The column 'date_of_booking' created successfully.")
 
     def process_data(self) -> pd.DataFrame:

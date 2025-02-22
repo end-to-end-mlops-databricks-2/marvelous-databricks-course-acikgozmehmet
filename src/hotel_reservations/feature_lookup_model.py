@@ -233,11 +233,13 @@ class FeatureLookUpModel:
 
         logger.info(f"✅ Model logged successfully to {self.model_artifact_path}.")
 
-    def register_model(self) -> None:
+    def register_model(self) -> str:
         """Register the model in UC and set the latest version alias.
 
         This method registers the LightGBM pipeline model in MLflow, logs the registered version,
         and sets the 'latest-model' alias to the newly registered version.
+
+        :return: The latest version of the registered model
         """
         logger.info("Registering the model in UC")
         registered_model = mlflow.register_model(
@@ -248,6 +250,7 @@ class FeatureLookUpModel:
         logger.info(f"✅ Model '{registered_model.name}' registered as version {registered_model.version}.")
 
         latest_version = registered_model.version
+        logger.info(f"Latest model version: {latest_version}")
 
         client = MlflowClient()
         client.set_registered_model_alias(
@@ -255,7 +258,9 @@ class FeatureLookUpModel:
             alias="latest-model",
             version=latest_version,
         )
+
         logger.info("The model is registered in UC")
+        return latest_version
 
     def load_latest_model_and_predict(self, X: DataFrame) -> DataFrame:
         """Load the trained model from MLflow using Feature Engineering Client and make predictions.

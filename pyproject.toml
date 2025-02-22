@@ -43,8 +43,8 @@ include = ["hotel_reservations"]
 
 # Version configuration:
 # Option 1: Use version from version.txt file (uncomment for releases)
-# [tool.setuptools.dynamic]
-# version = { file = "version.txt" }
+[tool.setuptools.dynamic]
+version = { file = "version.txt" }
 
 # Option 2: Use setuptools_scm for dynamic versioning (default for development)
 [tool.setuptools_scm]
