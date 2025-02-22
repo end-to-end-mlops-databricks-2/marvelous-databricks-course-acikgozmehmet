@@ -322,19 +322,23 @@ class FeatureLookUpModel:
 
         # Make predictions by loading the latest model from MLflow using Feature Engineering Client
         predictions_latest = self.load_latest_model_and_predict(X_test)
-        accuracy_latest = accuracy_score(y_test, predictions_latest)
-        auc_latest = roc_auc_score(y_test, predictions_latest)
+        logger.info(f"predictions_latest: {predictions_latest.head(10)}")
 
+        accuracy_latest = accuracy_score(y_test, predictions_latest)
         logger.info(f"Accuracy score for latest (registered) model: {accuracy_latest}")
+
+        auc_latest = roc_auc_score(y_test, predictions_latest)
         logger.info(f"ROC_AUC score  for latest (registered) model: {auc_latest}")
 
         # Make predictions with current model using Feature Engineering Client
         current_model_uri = f"runs:/{self.run_id}/{self.model_artifact_path}"
         predictions_current = self.fe.score_batch(model_uri=current_model_uri, df=X_test)
-        accuracy_current = accuracy_score(y_test, predictions_current)
-        auc_current = roc_auc_score(y_test, predictions_current)
+        logger.info(f"predictions_current: {predictions_current.head(10)}")
 
+        accuracy_current = accuracy_score(y_test, predictions_current)
         logger.info(f"Accuracy score for current model: {accuracy_current}")
+
+        auc_current = roc_auc_score(y_test, predictions_current)
         logger.info(f"ROC_AUC score  for current model: {auc_current}")
 
         # Compare two models to pick the better one

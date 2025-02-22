@@ -2,6 +2,9 @@
 !pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 
 # COMMAND ----------
+%restart_python
+
+# COMMAND ----------
 import os
 import pathlib
 
@@ -32,30 +35,45 @@ mlflow.set_registry_uri("databricks-uc")
 # COMMAND ----------
 envfile_path=pathlib.Path().joinpath("../project.env").resolve().as_posix()
 print(f'{envfile_path =}')
+
+
 load_dotenv(envfile_path)
 
-INGESTION_LOGS = os.environ['INGESTION_LOGS']
-INGESTION_LOGS = pathlib.Path(INGESTION_LOGS).resolve().as_posix()
-print(f"{INGESTION_LOGS = }")
-setup_logging(INGESTION_LOGS)
+TRAINING_LOGS = os.environ['TRAINING_LOGS']
+TRAINING_LOGS = pathlib.Path(TRAINING_LOGS).resolve().as_posix()
+print(f"{TRAINING_LOGS = }")
+
+setup_logging(TRAINING_LOGS)
 
 # COMMAND ----------
 if is_databricks():
-    DATABRICKS_FILE_PATH = os.environ["DATA_FILEPATH_DATABRICKS"]
     CONFIG_FILE_PATH = pathlib.Path("../project_config.yml").resolve().as_posix()
 
-
-print(f"{DATABRICKS_FILE_PATH = }")
 print(f"{CONFIG_FILE_PATH = }")
 
 # COMMAND ----------
+
 config = Config.from_yaml(CONFIG_FILE_PATH)
+tags = Tags(branch="dev")
+
+# COMMAND ----------
+config.experiment_name = config.experiment_name + "-fe"
+config.model.name = config.model.name + "_fe"
+config.model.artifact_path='fe-model'
+
+logger.info(f"{config.experiment_name = }")
+logger.info(f"{config.model.name = }")
+logger.info(f"{config.model.artifact_path = }")
+
+
+# COMMAND ----------
+# display(spark.table(f"{config.catalog_name}.{config.schema_name}.hotel_features").tail(50))
 
 # COMMAND ----------
 # input = ["model_train_register","--root_path","/path/to/root","--env","dev","--git_sha","abc123","--job_run_id","12345","--branch", "main"]
 # args = create_parser(input)
 
-tags = Tags(branch="dev")
+
 # COMMAND ----------
 fe_model =FeatureLookUpModel(config=config, tags=tags)
 logger.info("Model initiated")
@@ -79,18 +97,14 @@ fe_model.train_log_model()
 logger.info("Model training completed.")
 
 # COMMAND ----------
-test_set = spark.table(f"{config.catalog_name}.{config.schema_name}.test_set").limit(100)
-# Drop feature lookup columns and target
-test_set = test_set.drop("OverallQual", "GrLivArea", "GarageCars")
-
 # Load test set from Delta table
 test_set = spark.table(f"{config.catalog_name}.{config.schema_name}.test_set").limit(100)
-# Drop feature lookup columns and target
-X_test = test_set.drop("lead_time", "repeated_guest", "no_of_previous_cancellations","no_of_previous_bookings_not_canceled", config.target.alias)
-X_test.head()
+# Drop feature lookup columns 
+test_set = test_set.drop("lead_time", "repeated_guest", "no_of_previous_cancellations","no_of_previous_bookings_not_canceled")
+test_set.head()
 
 # COMMAND ----------
-should_register_new_model=fe_model.should_register_new_model(test_set=X_test)
+should_register_new_model=fe_model.should_register_new_model(test_set=test_set)
 logger.info(f"{should_register_new_model = }")
 # COMMAND ----------
 
