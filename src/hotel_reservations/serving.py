@@ -101,19 +101,25 @@ class ModelServing(ServingBase):
     """
 
     def __init__(
-        self, model_name: str, endpoint_name: str, workload_size: str = "Small", scale_to_zero: bool = True
+        self,
+        endpoint_name: str,
+        model_name: str,
+        version: str = "latest",
+        workload_size: str = "Small",
+        scale_to_zero: bool = True,
     ) -> None:
         """Initialize the ModelServing instance.
 
-        :param model_name: Name of the model to be served
         :param endpoint_name: Name of the serving endpoint
+        :param model_name: Name of the model to be served
+        :param version: str. Version of the model to deploy
         :param workload_size: Size of the workload, defaults to "Small"
         :param scale_to_zero: Whether to enable scale-to-zero, defaults to True
         """
         super().__init__(endpoint_name)
         # full_model_name = model_name change this
         self.model_name = model_name
-        entity_version = self._get_latest_model_version()
+        entity_version = self.get_latest_model_version() if version == "latest" else version
         self.served_entities = [
             ServedEntityInput(
                 entity_name=self.model_name,
@@ -248,9 +254,10 @@ class FeatureLookupServing(ModelServing):
 
     def __init__(
         self,
-        model_name: str,
         endpoint_name: str,
+        model_name: str,
         feature_table_name: str,
+        version: str = "latest",
         workload_size: str = "Small",
         scale_to_zero: bool = True,
     ) -> None:
@@ -263,7 +270,11 @@ class FeatureLookupServing(ModelServing):
         :param scale_to_zero: Whether to scale to zero, defaults to True
         """
         super().__init__(
-            model_name=model_name, endpoint_name=endpoint_name, workload_size=workload_size, scale_to_zero=scale_to_zero
+            endpoint_name=endpoint_name,
+            model_name=model_name,
+            version=version,
+            workload_size=workload_size,
+            scale_to_zero=scale_to_zero,
         )
         self.feature_table_name = feature_table_name
 
