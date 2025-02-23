@@ -23,6 +23,7 @@ class Tags(BaseModel):
 
     git_sha: str = Field(default_factory=get_current_git_sha)
     branch: str
+    job_run_id: str = Field(default=None)
 
 
 class Model(BaseModel):

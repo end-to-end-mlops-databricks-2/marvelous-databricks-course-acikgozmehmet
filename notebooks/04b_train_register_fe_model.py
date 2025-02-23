@@ -27,7 +27,6 @@ dbutils = DBUtils(spark)
 
 
 # COMMAND ----------
-
 mlflow.set_tracking_uri("databricks")
 mlflow.set_registry_uri("databricks-uc")
 
@@ -35,7 +34,6 @@ mlflow.set_registry_uri("databricks-uc")
 # COMMAND ----------
 envfile_path=pathlib.Path().joinpath("../project.env").resolve().as_posix()
 print(f'{envfile_path =}')
-
 
 load_dotenv(envfile_path)
 
@@ -52,7 +50,6 @@ if is_databricks():
 print(f"{CONFIG_FILE_PATH = }")
 
 # COMMAND ----------
-
 config = Config.from_yaml(CONFIG_FILE_PATH)
 tags = Tags(branch="dev")
 
@@ -64,15 +61,6 @@ config.model.artifact_path='fe-model'
 logger.info(f"{config.experiment_name = }")
 logger.info(f"{config.model.name = }")
 logger.info(f"{config.model.artifact_path = }")
-
-
-# COMMAND ----------
-# display(spark.table(f"{config.catalog_name}.{config.schema_name}.hotel_features").tail(50))
-
-# COMMAND ----------
-# input = ["model_train_register","--root_path","/path/to/root","--env","dev","--git_sha","abc123","--job_run_id","12345","--branch", "main"]
-# args = create_parser(input)
-
 
 # COMMAND ----------
 fe_model =FeatureLookUpModel(config=config, tags=tags)

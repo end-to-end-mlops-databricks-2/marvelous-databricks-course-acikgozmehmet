@@ -322,6 +322,7 @@ class FeatureLookUpModel:
         X_test = test_set.drop(self.target)
         y_test = test_set.select(self.target).toPandas()
 
+        logger.info("Evaluating latest registered model performance")
         # Make predictions by loading the latest model from MLflow using Feature Engineering Client
         predictions_latest = (
             self.load_latest_model_and_predict(X_test)
@@ -330,14 +331,13 @@ class FeatureLookUpModel:
             .toPandas()
         )
 
-        logger.info(f"predictions_latest: {predictions_latest.head(2)}")
+        logger.info(f"Sample predictions (latest model): {predictions_latest.head(2)}")
 
-        accuracy_latest = accuracy_score(y_test, predictions_latest)
-        logger.info(f"Accuracy score for latest (registered) model: {accuracy_latest}")
+        accuracy_latest = round(accuracy_score(y_test, predictions_latest), 2)
+        auc_latest = round(roc_auc_score(y_test, predictions_latest), 2)
+        logger.info(f"Latest model metrics - Accuracy: {accuracy_latest}, ROC AUC: {auc_latest}")
 
-        auc_latest = roc_auc_score(y_test, predictions_latest)
-        logger.info(f"ROC_AUC score  for latest (registered) model: {auc_latest}")
-
+        logger.info("Evaluating current model performance")
         # Make predictions with current model using Feature Engineering Client
         current_model_uri = f"runs:/{self.run_id}/{self.model_artifact_path}"
         predictions_current = (
@@ -347,22 +347,19 @@ class FeatureLookUpModel:
             .toPandas()
         )
 
-        logger.info(f"predictions_current: {predictions_current.head(2)}")
+        logger.info(f"Sample predictions (current model): {predictions_current.head(2)}")
 
         accuracy_current = round(accuracy_score(y_test, predictions_current), 2)
-        logger.info(f"Accuracy score for current model: {accuracy_current}")
-
         auc_current = round(roc_auc_score(y_test, predictions_current), 2)
-        logger.info(f"ROC_AUC score  for current model: {auc_current}")
+        logger.info(f"Current model metrics - Accuracy: {accuracy_current}, ROC AUC: {auc_current}")
 
         # Compare two models to pick the better one
         #  a new logic may be  as following  so that  if new model brings at least
         #  1 % improvement (accuracy_current - accuracy_latest) * 100 > 1 it will be registered
         if accuracy_current > accuracy_latest:
-            logger.info("Current model performs better than the latest (registered) model")
+            improvement = (accuracy_current - accuracy_latest) * 100
+            logger.info(f"Current model outperforms latest by {improvement:.2f}% in accuracy.")
             return True
         else:
-            logger.info(
-                "Latest (registered) model performs better than the current model. Keeping the latest (registered) one"
-            )
+            logger.info("Latest registered model performs better; keeping it !")
             return False
