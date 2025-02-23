@@ -9,6 +9,8 @@ from loguru import logger
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.types import IntegerType
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 from sklearn.pipeline import Pipeline
@@ -318,11 +320,17 @@ class FeatureLookUpModel:
         :return: True if the current model performs better, False otherwise
         """
         X_test = test_set.drop(self.target)
-        y_test = test_set[self.target].toPandas().to_numpy()
+        y_test = test_set.select(self.target).toPandas()
 
         # Make predictions by loading the latest model from MLflow using Feature Engineering Client
-        predictions_latest = self.load_latest_model_and_predict(X_test)
-        logger.info(f"predictions_latest: {predictions_latest.head(10)}")
+        predictions_latest = (
+            self.load_latest_model_and_predict(X_test)
+            .select("prediction")
+            .withColumn("prediction", F.col("prediction").cast(IntegerType()))
+            .toPandas()
+        )
+
+        logger.info(f"predictions_latest: {predictions_latest.head(2)}")
 
         accuracy_latest = accuracy_score(y_test, predictions_latest)
         logger.info(f"Accuracy score for latest (registered) model: {accuracy_latest}")
@@ -332,16 +340,24 @@ class FeatureLookUpModel:
 
         # Make predictions with current model using Feature Engineering Client
         current_model_uri = f"runs:/{self.run_id}/{self.model_artifact_path}"
-        predictions_current = self.fe.score_batch(model_uri=current_model_uri, df=X_test)
-        logger.info(f"predictions_current: {predictions_current.head(10)}")
+        predictions_current = (
+            self.fe.score_batch(model_uri=current_model_uri, df=X_test)
+            .select("prediction")
+            .withColumn("prediction", F.col("prediction").cast(IntegerType()))
+            .toPandas()
+        )
 
-        accuracy_current = accuracy_score(y_test, predictions_current)
+        logger.info(f"predictions_current: {predictions_current.head(2)}")
+
+        accuracy_current = round(accuracy_score(y_test, predictions_current), 2)
         logger.info(f"Accuracy score for current model: {accuracy_current}")
 
-        auc_current = roc_auc_score(y_test, predictions_current)
+        auc_current = round(roc_auc_score(y_test, predictions_current), 2)
         logger.info(f"ROC_AUC score  for current model: {auc_current}")
 
         # Compare two models to pick the better one
+        #  a new logic may be  as following  so that  if new model brings at least
+        #  1 % improvement (accuracy_current - accuracy_latest) * 100 > 1 it will be registered
         if accuracy_current > accuracy_latest:
             logger.info("Current model performs better than the latest (registered) model")
             return True
