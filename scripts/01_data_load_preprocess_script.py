@@ -8,7 +8,7 @@ from loguru import logger
 
 from hotel_reservations.config import Config
 from hotel_reservations.data_ingestion import DataLoader
-from hotel_reservations.synthetic import DataFabricator
+from hotel_reservations.synthetic_data import DataFabricator
 from hotel_reservations.utility import create_parser, is_databricks, setup_logging
 
 # Setup environment and configurations

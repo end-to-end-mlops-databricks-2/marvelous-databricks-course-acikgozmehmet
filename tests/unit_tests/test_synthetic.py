@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from hotel_reservations.data_ingestion import DataLoader
-from hotel_reservations.synthetic import DataFabricator
+from hotel_reservations.synthetic_data import DataFabricator
 
 
 def test_init_happy_path(dataloader: DataLoader) -> None:
