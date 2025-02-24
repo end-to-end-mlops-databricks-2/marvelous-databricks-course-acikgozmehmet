@@ -6,12 +6,11 @@
 %restart_python
 
 # COMMAND ----------
-from hotel_reservations import __version__
-print(__version__)
 
 import os
 import pathlib
 from dotenv import load_dotenv
+
 from hotel_reservations import __version__
 from hotel_reservations.config import Config
 from hotel_reservations.data_ingestion import DataLoader

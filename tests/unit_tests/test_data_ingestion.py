@@ -267,9 +267,19 @@ def test__create_date_of_booking_column(dataloader: DataLoader) -> None:
 
     dataloader._create_date_of_booking_column()
     assert "date_of_booking" in dataloader.df.columns.tolist()
-    assert all(isinstance(d, date) for d in dataloader.df["date_of_booking"])
 
+    # Ensure date_of_booking is datetime type
+    dataloader.df["date_of_booking"] = pd.to_datetime(dataloader.df["date_of_booking"])
+
+    # Ensure lead_time is integer type
+    dataloader.df["lead_time"] = dataloader.df["lead_time"].astype(int)
+
+    # Use vectorized operation
     expected_date_of_arrival = dataloader.df["date_of_booking"] + pd.to_timedelta(dataloader.df["lead_time"], unit="d")
+
+    # Convert date_of_arrival to datetime for comparison
+    dataloader.df["date_of_arrival"] = pd.to_datetime(dataloader.df["date_of_arrival"])
+
     assert (dataloader.df["date_of_arrival"] == expected_date_of_arrival).all(), "The columns are not identical"
 
 

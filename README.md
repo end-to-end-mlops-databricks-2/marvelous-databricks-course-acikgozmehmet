@@ -165,3 +165,38 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
 *   **Workflow:** The module simplifies the deployment of models (trained to use features created via Databricks Feature Engineering) by managing the process of creating the online feature tables and deploying the model with feature lookups.
 
 *   **Use Case:** Ideal for deploying models trained using the Databricks Feature Engineering Client in real-time inference scenarios. This ensures that models have access to the freshest feature data, leading to more accurate and reliable predictions. It is used in cases where the feature table is updated frequently, and the model needs to respond to the newest feature values. The module can be used to quickly spin up the serving endpoint for the model.
+
+#### `DataFabricator` Module
+
+*   The `DataFabricator` class provides a means to generate synthetic data that mirrors the statistical properties of an original dataset, while adhering to specific data quality standards and transformations.
+*   **Key Features:**
+    *   **DataLoader Integration:** Designed to work with a `DataLoader` object, making it compatible with the existing data loading and preparation pipeline.
+    *   **Immutability:** Implements mechanisms to prevent modification of key attributes, ensuring the integrity of the original dataset and configuration during synthetic data generation.
+    *   **Data Synthesis:** Generates synthetic data for both numerical and categorical features, preserving statistical distributions and handling unique identifiers.
+    *    **Customizable Data Generation:** Supports customization through passing a `num_rows` parameter.
+    *   **Data Validation:** Validates the generated synthetic data against pre-defined data types and constraints, ensuring consistency and quality.
+    *   **CSV Export:** Includes a utility function to save the generated synthetic data to a CSV file for further use.
+*   **Workflow:** The module takes a preprocessed `DataLoader` object as input, generates synthetic data based on the original data's statistics, validates the generated data, and provides options for saving the synthetic dataset.
+*   **Use Case:**  Beneficial for scenarios requiring synthetic data for testing, development, or privacy-preserving data sharing, such as when working with sensitive customer data or needing to augment training datasets.
+
+
+### Overview of `databricks.yml`
+
+![Serving](./images/dabs.png)
+
+*   The `databricks.yml` file defines the Databricks asset bundle for the `marvelous-databricks-course-acikgozmehmet` project, enabling automated deployment of workflows and resources to Databricks environments. This bundle orchestrates the data loading, preprocessing, model training, and model deployment process.
+
+*   **Key Components:**
+    *   **Bundle Definition:** Specifies the name and structure of the bundle, defining the project's deployment units.
+    *   **Artifacts:** Defines the build process for project artifacts, in this case, a Wheel package (`.whl`) created using `uv build`.
+    *   **Variables:** Declares variables that can be customized for different deployment environments, such as `git_sha`, `branch`, and `schedule_pause_status`.
+    *   **Resources (Jobs):** Configures the Databricks job, `hotel-reservations-workflow`, including its schedule (cron expression), timezone, pause status, and associated tags.
+    *   **Job Clusters:** Defines the compute resources (Databricks cluster) required to run the job.
+    *   **Tasks:** Defines a sequence of tasks that are executed as part of the job, including:
+        *   `load_preprocess`: Executes a Python script (`01_data_load_preprocess_script.py`) for data loading and preprocessing.
+        *   `train_model`: Executes a Python script (`02_train_register_fe_model_script.py`) for model training and registration.
+        *   `model_updated`: A conditional task that checks if the `train_model` task has an output equal to "1".
+        *   `deploy_model`: Executes a Python script (`03_deploy_fe_model_script.py`) for model deployment, contingent on the successful execution of `train_model` and a confirmation that the model needs to be updated based on a defined condition.
+    *   **Targets (Environments):** Defines deployment targets (e.g., `dev`, `acc`, `prd`) with environment-specific settings, such as the Databricks workspace host, root path, and cluster ID.
+
+*   **Workflow Orchestration:** The `databricks.yml` file orchestrates the entire hotel reservation prediction workflow by defining the tasks, dependencies, and environment-specific configurations. This automated deployment bundle streamlines the process of loading data, preprocessing, training, and deploying models within Databricks.
