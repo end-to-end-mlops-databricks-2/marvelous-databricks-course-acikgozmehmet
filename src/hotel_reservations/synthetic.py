@@ -1,22 +1,13 @@
 """Synthetic data genetarion module."""
 
-
 import copy
 import uuid
 
 import numpy as np
 import pandas as pd
 from loguru import logger
-from pydantic import ValidationError
-from pyspark.errors import AnalysisException
-from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
-from sklearn.model_selection import train_test_split
 
-from hotel_reservations.config import Config
 from hotel_reservations.data_ingestion import DataLoader
-from hotel_reservations.utility import is_databricks, normalize_arrival_date
-
 
 
 class DataFabricator:
@@ -156,4 +147,3 @@ class DataFabricator:
 
                 synthetic_data[col.alias] = rng.choice(unique_values, size=num_rows, p=probabilities)
         return synthetic_data
-
