@@ -282,31 +282,20 @@ class FeatureLookUpModel:
 
         :param spark: SparkSession object to execute SQL queries
         """
-        queries = [
-            f"""
+        tables = ["train_set", "test_set"]
+        for table in tables:
+            query = f"""
             WITH max_timestamp AS (
             SELECT MAX(update_timestamp_utc) AS max_update_timestamp
-            FROM {self.catalog_name}.{self.schema_name}.train_set
+            FROM {self.catalog_name}.{self.schema_name}.{table}
             )
             INSERT INTO {self.feature_table_name}
             SELECT booking_id, repeated_guest, no_of_previous_cancellations, no_of_previous_bookings_not_canceled
-            FROM {self.catalog_name}.{self.schema_name}.train_set
+            FROM {self.catalog_name}.{self.schema_name}.{table}
             WHERE update_timestamp_utc = (SELECT max_update_timestamp FROM max_timestamp)
-            """,
-            f"""
-            WITH max_timestamp AS (
-            SELECT MAX(update_timestamp_utc) AS max_update_timestamp
-            FROM {self.catalog_name}.{self.schema_name}.test_set
-            )
-            INSERT INTO {self.feature_table_name}
-            SELECT booking_id, repeated_guest, no_of_previous_cancellations, no_of_previous_bookings_not_canceled
-            FROM {self.catalog_name}.{self.schema_name}.test_set
-            WHERE update_timestamp_utc = (SELECT max_update_timestamp FROM max_timestamp)
-            """,
-        ]
+            """
 
-        for count, query in enumerate(queries, start=1):
-            logger.info(f"Executing SQL update for query {count}...")
+            logger.info(f"Executing SQL update for query {self.catalog_name}.{self.schema_name}.{table}...")
             spark.sql(query)
         logger.info(f"{self.feature_table_name} feature table updated successfully\n")
 
@@ -354,6 +343,8 @@ class FeatureLookUpModel:
         logger.info(f"Current model metrics - Accuracy: {accuracy_current}, ROC AUC: {auc_current}")
 
         # Compare two models to pick the better one
+        # Different metrics can be used here. The goal here is to automate ML process, not ML training for this use case.
+        # Going with a simple metric for evaulation.
         #  a new logic may be  as following  so that  if new model brings at least
         #  1 % improvement (accuracy_current - accuracy_latest) * 100 > 1 it will be registered
         if accuracy_current > accuracy_latest:

@@ -8,6 +8,7 @@ import yaml
 from loguru import logger
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     ValidationError,
 )
@@ -27,10 +28,11 @@ class Tags(BaseModel):
     job_run_id: str | None = Field(default=None, exclude=True)
 
     # allows extra fields to be added to the model instance.
-    class Config:
-        """The configuration."""
-
-        extra = "allow"
+    # class Config: # noqa
+    #     """The configuration."""
+    #
+    #     extra = "allow" # noqa
+    model_config = ConfigDict(extra="allow")
 
 
 class Model(BaseModel):

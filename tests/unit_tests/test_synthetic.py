@@ -5,7 +5,8 @@ import pathlib
 import pandas as pd
 import pytest
 
-from hotel_reservations.data_ingestion import DataFabricator, DataLoader
+from hotel_reservations.data_ingestion import DataLoader
+from hotel_reservations.synthetic import DataFabricator
 
 
 def test_init_happy_path(dataloader: DataLoader) -> None:
