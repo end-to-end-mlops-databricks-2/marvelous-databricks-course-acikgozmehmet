@@ -8,7 +8,7 @@ from loguru import logger
 from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
 
-from hotel_reservations.config import Config, Tags
+from hotel_reservations.config import Config
 from hotel_reservations.serving import FeatureLookupServing
 from hotel_reservations.utility import create_parser, setup_logging
 
@@ -47,7 +47,7 @@ logger.info(f"Updated model name: {config.model.name}")
 catalog_name = config.catalog_name
 schema_name = config.schema_name
 model_name = config.model.name
-full_model_name=f"{catalog_name}.{schema_name}.{model_name}"
+full_model_name = f"{catalog_name}.{schema_name}.{model_name}"
 logger.info(f"Full model name: {full_model_name}")
 
 feature_table_name = f"{catalog_name}.{schema_name}.hotel_features"
@@ -63,7 +63,7 @@ feature_model_server = FeatureLookupServing(
     endpoint_name=endpoint_name,
     model_name=full_model_name,
     feature_table_name=feature_table_name,
-    version=model_version
+    version=model_version,
 )
 
 # Update the online table for house features
@@ -72,4 +72,3 @@ feature_model_server.update_online_table(config=config)
 # Deploy the model serving endpoint with feature lookup
 feature_model_server.deploy_or_update_serving_endpoint_with_retry(retry_interval=60)
 logger.info("Started deployment/update of the serving endpoint")
-

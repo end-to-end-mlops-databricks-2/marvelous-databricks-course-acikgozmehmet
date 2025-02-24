@@ -23,7 +23,14 @@ class Tags(BaseModel):
 
     git_sha: str = Field(default_factory=get_current_git_sha)
     branch: str
-    job_run_id: str = Field(default=None)
+    # makes the field optional, and exclude this field from the model's dict representation when it's not set.
+    job_run_id: str | None = Field(default=None, exclude=True)
+
+    # allows extra fields to be added to the model instance.
+    class Config:
+        """The configuration."""
+
+        extra = "allow"
 
 
 class Model(BaseModel):

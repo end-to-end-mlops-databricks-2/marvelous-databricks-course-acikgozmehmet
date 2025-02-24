@@ -119,7 +119,7 @@ class ModelServing(ServingBase):
         super().__init__(endpoint_name)
         # full_model_name = model_name change this
         self.model_name = model_name
-        entity_version = self.get_latest_model_version() if version == "latest" else version
+        entity_version = self._get_latest_model_version() if version == "latest" else version
         self.served_entities = [
             ServedEntityInput(
                 entity_name=self.model_name,
