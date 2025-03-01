@@ -274,15 +274,17 @@ class FeatureLookUpModel:
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)
         return predictions
 
-    def update_feature_table(self) -> None:
-        """Update the feature table with data from train and test sets.
+    def update_feature_table(self, tables: list[str] | None = None) -> None:
+        """Update the feature table with data from specified tables.
 
-        This function executes SQL queries to insert the latest data from train and test sets
-        into the feature table based on the maximum update timestamp.
+        This function executes SQL queries to insert the latest data from the specified tables
+        (or default tables if not provided) into the feature table based on the maximum update timestamp.
 
-        :param spark: SparkSession object to execute SQL queries
+        :param tables: Optional list of table names to update from. Defaults to ['train_set', 'test_set'] if not provided.
         """
-        tables = ["train_set", "test_set"]
+        if tables is None:
+            tables = ["train_set", "test_set"]
+
         for table in tables:
             query = f"""
             WITH max_timestamp AS (

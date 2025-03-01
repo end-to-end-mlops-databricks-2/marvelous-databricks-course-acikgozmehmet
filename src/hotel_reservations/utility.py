@@ -145,7 +145,7 @@ def call_endpoint(endpoint_name: str, records: list[dict]) -> tuple[int, str]:
     """Call a serving endpoint with the given endpoint name and record data.
 
     :param endpoint_name: The name of the serving endpoint to call
-    :param record: A list of dictionaries containing the data to send to the endpoint
+    :param records: A list of dictionaries containing the data to send to the endpoint
     :return: A tuple containing the response status code and text
     """
     serving_endpoint = f"https://{os.environ['DBR_HOST']}/serving-endpoints/{endpoint_name}/invocations"
