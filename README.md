@@ -166,6 +166,11 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
 
 *   **Use Case:** Ideal for deploying models trained using the Databricks Feature Engineering Client in real-time inference scenarios. This ensures that models have access to the freshest feature data, leading to more accurate and reliable predictions. It is used in cases where the feature table is updated frequently, and the model needs to respond to the newest feature values. The module can be used to quickly spin up the serving endpoint for the model.
 
+Serving the model with an endpoint: 
+
+![Serving](./images/inference_w_postman.png)
+
+
 #### `DataFabricator` Module
 
 *   The `DataFabricator` class provides a means to generate synthetic data that mirrors the statistical properties of an original dataset, while adhering to specific data quality standards and transformations.
@@ -178,7 +183,6 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
     *   **CSV Export:** Includes a utility function to save the generated synthetic data to a CSV file for further use.
 *   **Workflow:** The module takes a preprocessed `DataLoader` object as input, generates synthetic data based on the original data's statistics, validates the generated data, and provides options for saving the synthetic dataset.
 *   **Use Case:**  Beneficial for scenarios requiring synthetic data for testing, development, or privacy-preserving data sharing, such as when working with sensitive customer data or needing to augment training datasets.
-
 
 ### Overview of `databricks.yml`
 
