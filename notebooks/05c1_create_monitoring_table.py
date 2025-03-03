@@ -1,16 +1,16 @@
 # Databricks notebook source
-import itertools
-!pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
-
+!pip install hotel_reservations-latest-py3-none-any.whl
 # COMMAND ----------
 %restart_python
 
 # COMMAND ----------
 import os
 import pathlib
-
+import itertools
 import time
 from datetime import datetime, timezone, timedelta
+import json
+
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -18,12 +18,13 @@ from loguru import logger
 import mlflow
 from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 from hotel_reservations import __version__
 from hotel_reservations.config import Config, Tags
 from hotel_reservations.feature_lookup_model import FeatureLookUpModel
 from hotel_reservations.serving import FeatureLookupServing
-from hotel_reservations.monitoring import Monitor
+from hotel_reservations.supervision import Monitor
 from hotel_reservations.utility import create_parser, is_databricks, setup_logging
 
 print(__version__)
@@ -65,6 +66,7 @@ logger.info(f"{config.experiment_name = }")
 logger.info(f"{config.model.artifact_path = }")
 logger.info(f"Updated model name: {config.model.name}")
 
+# COMMAND ----------
 catalog_name = config.catalog_name
 schema_name = config.schema_name
 model_name = config.model.name
@@ -101,23 +103,22 @@ monitor = Monitor(model=fe_model, serving= feature_model_server)
 logger.info("monitor instance created")
 
 # COMMAND ----------
+spark.table(f"{catalog_name}.{schema_name}.extra_set").select('market_segment_type').toPandas().value_counts()
+# COMMAND ----------
 # Create an inference_set table from extra_set by filtering market_segment_type='Aviation';
-spark.sql(
-    f"CREATE TABLE {catalog_name}.{schema_name}.inference_set "
-    f"LIKE {catalog_name}.{schema_name}.extra_set;"
-)
 
-spark.sql(f"ALTER TABLE {catalog_name}.{schema_name}.inference_set "
-          "ADD COLUMN update_timestamp_utc TIMESTAMP;")
+inference_set=spark.table(f"{catalog_name}.{schema_name}.extra_set").drop("update_timestamp_utc").toPandas().query("market_segment_type=='Aviation'")
+
+inference_set_with_timestamp=spark.createDataFrame(inference_set).withColumn("update_timestamp_utc", F.to_utc_timestamp(F.current_timestamp(), "UTC") )
+
+inference_set_with_timestamp.write.mode("overwrite").saveAsTable(f"{config.catalog_name}.{config.schema_name}.inference_set")
+
+spark.sql(f"ALTER TABLE {config.catalog_name}.{config.schema_name}.inference_set SET TBLPROPERTIES (delta.enableChangeDataFeed = true);")
 
 # COMMAND ----------
-time_now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-spark.sql(
-    f"INSERT INTO {catalog_name}.{schema_name}.inference_set "
-    f"SELECT *, '{time_now}' as update_timestamp_utc "
-    f"FROM {catalog_name}.{schema_name}.extra_set where "
-    "market_segment_type='Aviation';"
-)
+
+
+# COMMAND ----------
 # COMMAND ----------
 # update the feature_table
 fe_model.update_feature_table(tables=['inference_set'])
@@ -159,6 +160,18 @@ test_set_records = test_set[required_columns].to_dict(orient="records")
 inference_set_records = inference_set[required_columns].to_dict(orient="records")
 
 # COMMAND ----------
+json_string = json.dumps(test_set_records, default=str)
+dataframe_records=json.loads(json_string)
+display(dataframe_records)
+
+# COMMAND ----------
+json_string = json.dumps(dataframe_records, default=str)
+test_set_records=json.loads(json_string)
+
+# COMMAND ----------
+
+response = monitor.query_request(test_set_records[0])
+
 # COMMAND ----------
 # start shooting with test_set
 end_time = datetime.now() + timedelta(minutes=20)
