@@ -12,6 +12,7 @@ from loguru import logger
 from hotel_reservations.config import Config
 from hotel_reservations.utility import (
     create_parser,
+    dict_to_json_to_dict,
     get_current_git_sha,
     get_delta_table_version,
     is_databricks,
@@ -319,3 +320,31 @@ def test_create_parser_extra_arguments() -> None:
     """
     with pytest.raises(SystemExit):
         create_parser(["data_ingestion", "--root_path", "/path/to/root", "--env", "prod", "extra_arg"])
+
+
+def test_dict_to_json_to_dict_w_single_dict() -> None:
+    """Test Converting a dictionary to JSON and back to a dictionary.
+
+    This function takes a dictionary, converts it to a JSON string, and then converts
+    the JSON string back to a dictionary.
+    """
+    my_dict = {"name": "John Doe", "age": 30, "city": "New York", "hobbies": ["reading", "swimming", "coding"]}
+    json_result, dict_result = dict_to_json_to_dict(my_dict)
+
+    assert isinstance(json_result, str)
+    assert isinstance(dict_result, dict)
+
+
+def test_dict_to_json_to_dict_w_list_of_dict() -> None:
+    """Test converting a list of dictionaries to JSON string and back to a list of dictionaries."""
+    list_of_dicts = [
+        {"name": "Alice", "age": 28, "city": "London"},
+        {"name": "Bob", "age": 35, "city": "Paris"},
+        {"name": "Charlie", "age": 42, "city": "Tokyo"},
+    ]
+
+    json_string, output_data = dict_to_json_to_dict(input_data=list_of_dicts)
+
+    assert isinstance(json_string, str)
+    assert isinstance(output_data, list)
+    assert isinstance(output_data[0], dict)

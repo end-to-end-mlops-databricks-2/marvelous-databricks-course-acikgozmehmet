@@ -1,6 +1,7 @@
 """Utility functions for credit default project."""
 
 import argparse
+import json
 import os
 import pathlib
 import sys
@@ -222,3 +223,24 @@ def create_parser(args: Sequence[str] = None) -> argparse.Namespace:
     subparsers.add_parser("deployment", parents=[common_args], help="Deployment options")
 
     return parser.parse_args(args)
+
+
+def dict_to_json_to_dict(input_data: dict | list[dict]) -> tuple[str, dict | list[dict]]:
+    """Convert a dictionary or list of dictionaries to JSON and then back to the original format.
+
+    :param input_data (dict or list of dict): The input data to be converted.
+    :return: tuple: A tuple containing (json_string, output_data)
+                    json_string: A JSON-formatted string representation of the input data
+                    output_data: Data converted back from the JSON string (dict or list of dict).
+    :raises TypeError: If there's an error during conversion
+    """
+    try:
+        # Convert dict to JSON string
+        json_string = json.dumps(input_data, indent=2)
+
+        # Convert JSON string back to dict
+        output_data = json.loads(json_string)
+
+        return json_string, output_data
+    except (TypeError, json.JSONDecodeError) as e:
+        raise TypeError(f"Error: {str(e)}") from e

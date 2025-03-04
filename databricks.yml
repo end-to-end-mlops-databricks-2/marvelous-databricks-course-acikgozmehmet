@@ -46,7 +46,7 @@ resources:
       tasks:
         - task_key: "load_preprocess"
           job_cluster_key: "hotel-reservations-cluster"
-          spark_python_task: 
+          spark_python_task:
             python_file: "scripts/01_data_load_preprocess_script.py"
             parameters:  ["data_ingestion", "--root_path", "${workspace.root_path}", "--env", "${bundle.target}"]
           libraries:
@@ -57,7 +57,7 @@ resources:
             - task_key: "load_preprocess"
           spark_python_task:
             python_file: "scripts/02_train_register_fe_model_script.py"
-            parameters:  ["model_train_register", "--root_path", "${workspace.root_path}", "--env", "${bundle.target}", "--git_sha", "${var.git_sha}", "--job_run_id", "{{job.id}}", "--branch", "${var.branch}"] 
+            parameters:  ["model_train_register", "--root_path", "${workspace.root_path}", "--env", "${bundle.target}", "--git_sha", "${var.git_sha}", "--job_run_id", "{{job.id}}", "--branch", "${var.branch}"]
           libraries:
             - whl: ./dist/*.whl
         - task_key: model_updated
@@ -101,4 +101,4 @@ targets:
   #     host: https://dbc-4894232b-9fc5.cloud.databricks.com
   #     root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
   #   variables:
-  #     schedule_pause_status: UNPAUSED      
+  #     schedule_pause_status: UNPAUSED
