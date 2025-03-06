@@ -1,4 +1,5 @@
 # Databricks notebook source
+
 # !pip install hotel_reservations-latest-py3-none-any.whl
 !pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 # COMMAND ----------
@@ -32,10 +33,6 @@ print(__version__)
 # COMMAND ----------
 spark = SparkSession.builder.getOrCreate()
 dbutils = DBUtils(spark)
-
-
-# COMMAND ----------
-
 # COMMAND ----------
 # Load the environment variables and set up logging
 envfile_path=pathlib.Path().joinpath("../project.env").resolve().as_posix()
@@ -76,22 +73,23 @@ model_name = config.model.name
 full_model_name = f"{catalog_name}.{schema_name}.{model_name}"
 logger.info(f"Full model name: {full_model_name}")
 
-#  I may even not need this, since it is already in fe_model.feature_table_name
+# COMMAND ----------
 feature_table_name = f"{catalog_name}.{schema_name}.hotel_features"
 logger.info(f"Feature table name: {feature_table_name}")
 
-
+# COMMAND ----------
 endpoint_name = model_name.replace("_", "-") + "-serving"
 env="dev"
 endpoint_name = f"{endpoint_name}-{env}"
 logger.info(f"Endpoint name: {endpoint_name}")
 
 # COMMAND ----------
-# Instantiate FeatureLookUpModel to update the feature table
-fe_model =FeatureLookUpModel(config=config, tags=tags)
-logger.info("Model initiated")
-
+# MAGIC %md
+# MAGIC #### Let's create MonitoringManager instance step by step
 # COMMAND ----------
+# Instantiate FeatureLookUpModel to update the feature table
+fe_model = FeatureLookUpModel(config=config, tags=tags)
+logger.info("An instance of FeatureLookUpModel is instantiated.")
 
 # COMMAND ----------
 # Instantiate FeatureLookUpServing to update the online feature table
@@ -100,22 +98,20 @@ feature_model_server = FeatureLookupServing(
     model_name=full_model_name,
     feature_table_name=feature_table_name,
 )
-
+logger.info("An instance of FeatureLookupServing is instantiated.")
 # COMMAND ----------
 # Instantiate MonitorManager to create monitoring
 inference_table_fullname = f"{catalog_name}.{schema_name}.`hotel-reservations-model-fe-serving-dev_payload`"
 monitor = MonitoringManager(model=fe_model, serving= feature_model_server, inference_table_fullname=inference_table_fullname)
-logger.info("MonitoringManager instance created")
+logger.info("An instance of MonitoringManager is instantiated")
 
 # COMMAND ----------
+# MAGIC %md
+# MAGIC #### Let's arrange some inference data for mimicking real life scenarios.
+# COMMAND ----------
+# let's see the cardinality of the market_segment_type 
 spark.table(f"{catalog_name}.{schema_name}.extra_set").select('market_segment_type').toPandas().value_counts()
 # COMMAND ----------
-# Create an inference_set table from extra_set by filtering market_segment_type='Aviation';
-
-# inference_set=spark.table(f"{catalog_name}.{schema_name}.extra_set").drop("update_timestamp_utc").toPandas().query("market_segment_type=='Aviation'")
-# inference_set_with_timestamp=spark.createDataFrame(inference_set).withColumn("update_timestamp_utc", F.to_utc_timestamp(F.current_timestamp(), "UTC") )
-# inference_set_with_timestamp.write.mode("overwrite").saveAsTable(f"{config.catalog_name}.{config.schema_name}.inference_set")
-# spark.sql(f"ALTER TABLE {config.catalog_name}.{config.schema_name}.inference_set SET TBLPROPERTIES (delta.enableChangeDataFeed = true);")
 # COMMAND ----------
 def create_inference_set(market_segment_type: str, catalog_name: str, schema_name:str) -> None:
     """
@@ -151,23 +147,25 @@ def create_inference_set(market_segment_type: str, catalog_name: str, schema_nam
     )
 
 # COMMAND ----------
-# Create the inference set
+# Create an inference_set table from extra_set by filtering market_segment_type='Aviation';
 selected_market_segment_type = "Aviation"
 create_inference_set(market_segment_type=selected_market_segment_type, catalog_name=config.catalog_name, schema_name=config.schema_name)
 logger.info(f"Creating inference set with {selected_market_segment_type}")
 # COMMAND ----------
-# Update the feature_table with the new inference set
+# Update the feature_table with the new inference set 
 fe_model.update_feature_table(tables=['inference_set'])
 
 # COMMAND ----------
-# Update the online feature table
+# Update the online feature table with the new inference set
 feature_model_server.update_online_table(config)
 
+# COMMAND ----------
+# MAGIC %md
+# MAGIC #### Let's mimic the real inference flow by using test_set and inference_set.
 # COMMAND ----------
 # Load test set from Delta table
 test_set = spark.table(f"{config.catalog_name}.{config.schema_name}.test_set").toPandas()
 test_set.head()
-
 # COMMAND ----------
 # Load inference_set from Delta table
 inference_set = spark.table(f"{config.catalog_name}.{config.schema_name}.inference_set").toPandas()
@@ -196,14 +194,6 @@ logger.info(f"test set records: \n {test_set_records[:4]}")
 # COMMAND ----------
 inference_set_records = inference_set[required_columns].to_dict(orient="records")
 logger.info(f"inference_set_records: \n {inference_set_records[:4]}")
-# COMMAND ----------
-# json_string = json.dumps(test_set_records, default=str)
-# dataframe_records=json.loads(json_string)
-# display(dataframe_records)
-
-# COMMAND ----------
-# json_string = json.dumps(dataframe_records, default=str)
-# test_set_records=json.loads(json_string)
 
 # COMMAND ----------
 os.environ['DBR_TOKEN'] = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
@@ -240,8 +230,9 @@ for index, record in enumerate(itertools.cycle(inference_set_records)):
     print(f"Response text: {response_text}")
     time.sleep(0.2)
 
-
 # COMMAND ----------
+# We need to send the paths of tables to merge the ground truth with the inference table for monitoring. 
+# We assume to have ground truth from these tables after some time in real life.
 test_set_table_fullname = f"{catalog_name}.{schema_name}.test_set"
 inference_set_table_fullname = f"{catalog_name}.{schema_name}.inference_set"
 # COMMAND ----------

@@ -222,6 +222,9 @@ def create_parser(args: Sequence[str] = None) -> argparse.Namespace:
     # Deployment subparser
     subparsers.add_parser("deployment", parents=[common_args], help="Deployment options")
 
+    # Deployment subparser
+    subparsers.add_parser("monitor", parents=[common_args], help="Monitoring options")
+
     return parser.parse_args(args)
 
 
