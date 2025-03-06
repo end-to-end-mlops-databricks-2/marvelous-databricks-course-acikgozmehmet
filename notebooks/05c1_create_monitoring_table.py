@@ -1,6 +1,6 @@
 # Databricks notebook source
-from pandas.core.interchange.dataframe_protocol import DataFrame
-!pip install hotel_reservations-latest-py3-none-any.whl
+# !pip install hotel_reservations-latest-py3-none-any.whl
+!pip install /Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl
 # COMMAND ----------
 %restart_python
 
@@ -18,7 +18,7 @@ from loguru import logger
 
 import mlflow
 from pyspark.dbutils import DBUtils
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 
 from hotel_reservations import __version__
@@ -81,8 +81,8 @@ feature_table_name = f"{catalog_name}.{schema_name}.hotel_features"
 logger.info(f"Feature table name: {feature_table_name}")
 
 
-env="dev"
 endpoint_name = model_name.replace("_", "-") + "-serving"
+env="dev"
 endpoint_name = f"{endpoint_name}-{env}"
 logger.info(f"Endpoint name: {endpoint_name}")
 
@@ -103,8 +103,9 @@ feature_model_server = FeatureLookupServing(
 
 # COMMAND ----------
 # Instantiate MonitorManager to create monitoring
-monitor = MonitoringManager(model=fe_model, serving= feature_model_server)
-logger.info("monitor instance created")
+inference_table_fullname = f"{catalog_name}.{schema_name}.`hotel-reservations-model-fe-serving-dev_payload`"
+monitor = MonitoringManager(model=fe_model, serving= feature_model_server, inference_table_fullname=inference_table_fullname)
+logger.info("MonitoringManager instance created")
 
 # COMMAND ----------
 spark.table(f"{catalog_name}.{schema_name}.extra_set").select('market_segment_type').toPandas().value_counts()
@@ -151,8 +152,9 @@ def create_inference_set(market_segment_type: str, catalog_name: str, schema_nam
 
 # COMMAND ----------
 # Create the inference set
-create_inference_set(market_segment_type="Aviation", catalog_name=config.catalog_name, schema_name=config.schema_name)
-
+selected_market_segment_type = "Aviation"
+create_inference_set(market_segment_type=selected_market_segment_type, catalog_name=config.catalog_name, schema_name=config.schema_name)
+logger.info(f"Creating inference set with {selected_market_segment_type}")
 # COMMAND ----------
 # Update the feature_table with the new inference set
 fe_model.update_feature_table(tables=['inference_set'])
@@ -190,8 +192,10 @@ required_columns = [
 ]
 # COMMAND ----------
 test_set_records = test_set[required_columns].to_dict(orient="records")
+logger.info(f"test set records: \n {test_set_records[:4]}")
+# COMMAND ----------
 inference_set_records = inference_set[required_columns].to_dict(orient="records")
-
+logger.info(f"inference_set_records: \n {inference_set_records[:4]}")
 # COMMAND ----------
 # json_string = json.dumps(test_set_records, default=str)
 # dataframe_records=json.loads(json_string)
@@ -206,36 +210,42 @@ os.environ['DBR_TOKEN'] = dbutils.notebook.entry_point.getDbutils().notebook().g
 os.environ['DBR_HOST'] = spark.conf.get('spark.databricks.workspaceUrl')
 
 # COMMAND ----------
-_, test_set_records = dict_to_json_to_dict(input_dict=test_set_records)
-display(test_set_records)
-# response = monitor.query_request(test_set_records[0])
+_, test_set_records = dict_to_json_to_dict(input_data=test_set_records)
+logger.info(f"test set records: \n {test_set_records[:4]}")
 
 # COMMAND ----------
-_, inference_set_records = dict_to_json_to_dict(input_dict=inference_set_records)
-display(inference_set_records)
-
-# COMMAND ----------
-# start shooting with inference set records
 end_time = datetime.now() + timedelta(minutes=20)
-for index, record in enumerate(itertools.cycle(inference_set_records)):
-    if datetime.now() >= end_time:
-        break
-    print(f"Sending request for test data, index {index}")
-    status_code, response_text = call_endpoint(endpoint_name=endpoint_name, records=record)
-    print(f"Response status: {status_code}")
-    print(f"Response text: {response_text}")
-    time.sleep(0.2)
-
-# COMMAND ----------
-end_time = datetime.now() + timedelta(minutes=30)
 for index, record in enumerate(itertools.cycle(test_set_records)):
     if datetime.now() >= end_time:
         break
     print(f"Sending request for test data, index {index}")
-    status_code, response_text = call_endpoint(endpoint_name=endpoint_name, records=record)
+    status_code, response_text = call_endpoint(endpoint_name=endpoint_name, records=[record])
     print(f"Response status: {status_code}")
     print(f"Response text: {response_text}")
     time.sleep(0.2)
 
 # COMMAND ----------
-monitor.create_or_refresh_monitoring()
+_, inference_set_records = dict_to_json_to_dict(input_data=inference_set_records)
+logger.info(f"{inference_set_records = }")
+
+# COMMAND ----------
+# start shooting with inference set records
+end_time = datetime.now() + timedelta(minutes=30)
+for index, record in enumerate(itertools.cycle(inference_set_records)):
+    if datetime.now() >= end_time:
+        break
+    print(f"Sending request for test data, index {index}")
+    status_code, response_text = call_endpoint(endpoint_name=endpoint_name, records=[record])
+    print(f"Response status: {status_code}")
+    print(f"Response text: {response_text}")
+    time.sleep(0.2)
+
+
+# COMMAND ----------
+test_set_table_fullname = f"{catalog_name}.{schema_name}.test_set"
+inference_set_table_fullname = f"{catalog_name}.{schema_name}.inference_set"
+# COMMAND ----------
+monitor.create_or_refresh_monitoring(
+    test_set_table_fullname=test_set_table_fullname,
+    inference_set_table_fullname=inference_set_table_fullname
+)

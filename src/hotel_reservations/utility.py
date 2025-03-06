@@ -236,8 +236,7 @@ def dict_to_json_to_dict(input_data: dict | list[dict]) -> tuple[str, dict | lis
     """
     try:
         # Convert dict to JSON string
-        json_string = json.dumps(input_data, indent=2)
-
+        json_string = json.dumps(input_data, default=str, indent=2)
         # Convert JSON string back to dict
         output_data = json.loads(json_string)
 

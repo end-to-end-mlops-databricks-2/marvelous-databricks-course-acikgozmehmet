@@ -29,24 +29,37 @@ if is_databricks():
 class MonitoringManager:
     """A class for monitoring and interacting with model serving endpoints."""
 
-    def __init__(self, model: FeatureLookUpModel, serving: FeatureLookupServing) -> None:
-        """Initialize the Monitor with a model and serving object.
+    def __init__(self, model: FeatureLookUpModel, serving: FeatureLookupServing, inference_table_fullname: str) -> None:
+        """Initialize the Monitor with a model and serving object  and inference table information.
 
-        :param model: The model to be monitored
-        :param serving: The serving object to interact with endpoints
+        :param model: The feature lookup model object
+        :param serving: The feature lookup serving object
+        :param inference_table_fullname: Full name of the inference table
         """
         self.model = model
         self.serving = serving
-        self.inference_table_fullname = (
-            f"{self.model.catalog_name}.{self.model.schema_name}.`hotel-reservations-model-fe-serving-dev_payload`"
-        )
+        self.inference_table_fullname = inference_table_fullname
         self.monitoring_table_fullname = f"{self.model.catalog_name}.{self.model.schema_name}.model_monitoring"
 
-    def create_or_refresh_monitoring(self) -> None:
-        """Manage the creation and refreshing of monitoring tables and quality monitors."""
+    def create_or_refresh_monitoring(self, test_set_table_fullname: str, inference_set_table_fullname: str) -> None:
+        """Manage the creation and refreshing of monitoring tables and quality monitors.
+
+        This method processes inference data, creates or refreshes the Lakehouse monitoring table,
+        and manages the quality monitor. If the monitor exists, it refreshes it; otherwise,
+        it creates a new one.
+
+        The followings are the tables which contains the ground truth.
+        :param test_set_table_fullname: Full name of the test set table such as {catalog_name}.{schema_name}.test_set"
+        :param inference_set_table_fullname: Full name of the inference set table such as {catalog_name}.{schema_name}.inference_set"
+        :raises: Any exceptions that may occur during the process
+        """
         # Create or refresh the Lakehouse monitoring table
         inference_data = self._process_inference_data()
-        self._create_monitor_table(inference_data=inference_data)
+        self._create_monitor_table(
+            inference_data=inference_data,
+            test_set_table_fullname=test_set_table_fullname,
+            inference_set_table_fullname=inference_set_table_fullname,
+        )
 
         try:
             self.serving.workspace.quality_monitors.get(self.monitoring_table_fullname)
@@ -58,6 +71,13 @@ class MonitoringManager:
             logger.info("Lakehouse monitoring table is created.")
 
     def _process_inference_data(self) -> DataFrame:
+        """Process inference data from a specified table and return a DataFrame with parsed and transformed data.
+
+        This function reads data from an inference table, parses JSON fields, explodes nested records,
+        and selects specific columns to create a final DataFrame for further analysis or processing.
+
+        :return: A DataFrame containing processed inference data
+        """
         inference_table = spark.sql(f"SELECT * FROM {self.inference_table_fullname}")
         inference_table.display()
 
@@ -144,13 +164,25 @@ class MonitoringManager:
         )
         df_final.display()
         logger.info("final dataframe created")
+        logger.info(f"final inference data :\n {df_final.head(3)}")
 
         return df_final
 
-    def _create_monitor_table(self, inference_data: DataFrame) -> None:
+    def _create_monitor_table(
+        self, inference_data: DataFrame, test_set_table_fullname: str, inference_set_table_fullname: str
+    ) -> None:
+        """Create and update the monitoring table with inference data and ground truth.
+
+        This function merges predictions with ground truth data, joins with hotel features,
+        and appends the result to the monitoring table.
+
+        :param inference_data: DataFrame containing inference data
+        """
         # merge the predictions with the ground truth data
-        test_set = spark.table(f"{self.model.catalog_name}.{self.model.schema_name}.test_set")
-        inference_set = spark.sql(f"SELECT * FROM {self.model.catalog_name}.{self.model.schema_name}.inference_set")
+        # test_set = spark.table(f"{self.model.catalog_name}.{self.model.schema_name}.test_set") # noqa
+        # inference_set = spark.sql(f"SELECT * FROM {self.model.catalog_name}.{self.model.schema_name}.inference_set") # noqa
+        test_set = spark.table(test_set_table_fullname)
+        inference_set = spark.table(inference_set_table_fullname)
 
         df_final_with_status = (
             inference_data.join(test_set.select("booking_id", "booking_status"), on="booking_id", how="left")
@@ -168,8 +200,12 @@ class MonitoringManager:
 
         logger.info("inference data updated with ground truth for booking_status")
 
+        # Load the hotel features table and join with the final dataframe to get all features
         hotel_features = spark.table(self.model.feature_table_name)
+        logger.info(f"hotel_features :\n {hotel_features.head(3)}")
+
         df_final_with_features = df_final_with_status.join(hotel_features, on="booking_id", how="left")
+        logger.info(f"df_final_with_features :\n {df_final_with_features.head(3)}")
 
         # Convert the dataframe to delta table and append to the monitoring table
         df_final_with_features.write.format("delta").mode("append").saveAsTable(self.monitoring_table_fullname)
@@ -180,6 +216,11 @@ class MonitoringManager:
         )
 
     def _create_quality_monitor(self) -> None:
+        """Create a quality monitor for the model.
+
+        This method sets up a quality monitor for the model using the Databricks Lakehouse Monitoring API.
+        It configures the monitor with specific parameters for classification problems.
+        """
         # we can also add 1) baseline_table_name and 2) slicing_exprs to enhance the implementation.
         self.serving.workspace.quality_monitors.create(
             table_name=self.monitoring_table_fullname,
@@ -195,7 +236,7 @@ class MonitoringManager:
             ),
         )
 
-    def _verify_quality_monitor(self, max_retries: int = 20, retry_interval: int = 30) -> bool:
+    def _verify_quality_monitor(self, max_retries: int = 20, retry_interval: int = 60) -> bool:
         """Verify the quality monitor's status and wait for it to become active.
 
         Repeatedly checks the status of the quality monitor for a specified table,

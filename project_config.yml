@@ -9,7 +9,7 @@ acc:
 dev:
   catalog_name: mlops_dev
   schema_name: acikgozm
-  pipeline_id: 8db6ad66-e908-4e15-adce-c63ad6ede390
+  pipeline_id: 01b28c81-5ea4-4e27-99c5-6fdfdc275566
 
 #default values for notebook implementations
 # catalog_name: mlops_dev
