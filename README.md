@@ -225,7 +225,7 @@ Okay, I will provide you with a `README.md` paragraph for the `MonitoringManager
 
 
 
-### Lakehouse Monitoring 
+### Lakehouse Monitoring
 
 #### `MonitoringManager` Module
 
