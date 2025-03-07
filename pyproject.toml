@@ -31,8 +31,7 @@ dev = ["databricks-connect>=15.4.1, <16",
        "pre-commit>=4.1.0, <5"]
 
 [build-system]
-requires = [
-  "setuptools>=72.0"]
+requires = ["setuptools>=72.0", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -42,8 +41,13 @@ include = ["hotel_reservations"]
 [tool.setuptools.package-data]
 "hotel_reservations" = ["data/*"]
 
+# Version configuration:
+# Option 1: Use version from version.txt file (uncomment for releases)
 [tool.setuptools.dynamic]
 version = { file = "version.txt" }
+
+# Option 2: Use setuptools_scm for dynamic versioning (default for development)
+[tool.setuptools_scm]
 
 [lint.pydocstyle]
 convention = "sphinx"

@@ -87,9 +87,11 @@ logger.info(f"{full_model_name = }")
 
 # COMMAND ----------
 feature_table_name = f"{catalog_name}.{schema_name}.hotel_features"
-endpoint_name = CONFIG.model.name.replace("_", "-") +"-serving"
-
 logger.info(f"{feature_table_name = }")
+# COMMAND ----------
+endpoint_name = CONFIG.model.name.replace("_", "-") +"-serving"
+env="dev"
+endpoint_name = f"{endpoint_name}-{env}"
 logger.info(f"{endpoint_name = }")
 
 # COMMAND ----------

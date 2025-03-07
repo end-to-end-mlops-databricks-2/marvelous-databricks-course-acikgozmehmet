@@ -218,8 +218,11 @@ class DataLoader:
         """Create a new column 'date_of_booking' by subtracting 'lead_time' from 'date_of_arrival'."""
         self.df["date_of_arrival"] = pd.to_datetime(self.df["date_of_arrival"])
         self.df["lead_time"] = pd.to_timedelta(self.df["lead_time"], unit="D")
-        self.df["date_of_booking"] = self.df["date_of_arrival"] - self.df["lead_time"]
+        self.df["date_of_booking"] = (self.df["date_of_arrival"] - self.df["lead_time"]).dt.date
 
+        self.df["date_of_arrival"] = pd.to_datetime(self.df["date_of_arrival"]).dt.date  # noqa
+        # self.df["date_of_booking"] = pd.to_datetime(self.df["date_of_booking"]).dt.date  # noqa
+        self.df["lead_time"] = self.df["lead_time"].dt.days.astype("int16")
         logger.info("The column 'date_of_booking' created successfully.")
 
     def process_data(self) -> pd.DataFrame:
@@ -242,6 +245,10 @@ class DataLoader:
             # Custom operations on data preprocessing
             self._normalize_arrival_date()
             self._create_date_of_booking_column()
+
+            # extra check
+            self._convert_column_data_types()
+            self._validate_data_types()
 
             # final checks on data preprocessing
             self._validate_processed_data()
@@ -315,10 +322,10 @@ class DataLoader:
 
         # spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.config.catalog_name}.{self.config.schema_name}") #noqa ERA
 
-        train_set_with_timestamp.write.mode("overwrite").saveAsTable(
+        train_set_with_timestamp.write.mode("append").saveAsTable(
             f"{self.config.catalog_name}.{self.config.schema_name}.train_set"
         )
-        test_set_with_timestamp.write.mode("overwrite").saveAsTable(
+        test_set_with_timestamp.write.mode("append").saveAsTable(
             f"{self.config.catalog_name}.{self.config.schema_name}.test_set"
         )
 
@@ -333,7 +340,7 @@ class DataLoader:
             extra_set_with_timestamp = spark.createDataFrame(extra_set).withColumn(
                 "update_timestamp_utc", F.to_utc_timestamp(F.current_timestamp(), "UTC")
             )
-            extra_set_with_timestamp.write.mode("overwrite").saveAsTable(
+            extra_set_with_timestamp.write.mode("append").saveAsTable(
                 f"{self.config.catalog_name}.{self.config.schema_name}.extra_set"
             )
             spark.sql(

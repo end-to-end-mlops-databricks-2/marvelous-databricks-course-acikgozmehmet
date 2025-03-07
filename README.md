@@ -50,6 +50,22 @@ uv lock
 
 Overall, it is a comprehensive data preparation pipeline for hotel reservation data, emphasizing data quality, flexibility, and compatibility with both local and cloud-based (Databricks) environments.
 
+**`DataLoader` Module**
+
+*   **Purpose:** The `DataLoader` class provides a comprehensive solution for cleaning, processing, and preparing data for machine learning tasks. It is designed to work with both local files and Databricks tables and includes robust validation and transformation capabilities, and is a key step prior to the model training process.
+*   **Key Features:**
+
+    *   **Flexible Data Loading:** Capable of loading data from CSV files (locally or on Databricks) or directly from Databricks tables, providing compatibility with various data storage locations.
+    *   **Robust Data Validation:** Implements thorough data validation, including checks for required columns, data types, and null values, ensuring data quality and consistency. It validates data against the config and ensures data quality.
+    *   **Configurable Data Transformations:** Supports various data transformations, including column renaming, data type conversion, and value correction, allowing customization based on specific data requirements.
+    *   **Data Splitting:** Splits data into training and testing sets using `scikit-learn's` `train_test_split` function, enabling model training and evaluation.
+    *   **Databricks Integration:** Seamlessly integrates with Databricks, enabling saving the processed data to Databricks tables in a catalog for easy access and management and enabling Change Data Feed (CDF).
+    *   **Error Handling:** Includes comprehensive error handling to manage file-related errors, data validation errors, and configuration errors, ensuring robust data processing.
+
+*   **Workflow:** The `DataLoader` module automates the data cleaning and preparation process: loading data from a specified source, validating data integrity and structure, transforming data to meet specific requirements, splitting data into training and testing sets, and saving the prepared data to a Databricks catalog or dataframes.
+
+*   **Use Case:** Ideal for data science projects that require cleaning, validating, and preparing data from diverse sources for machine learning model training. The module's flexibility, robustness, and Databricks integration make it well-suited for building and deploying models within the Databricks environment.
+
 ### Model Training & Registration
 
 #### `Basic Model`
@@ -165,3 +181,66 @@ Overall, it is a comprehensive data preparation pipeline for hotel reservation d
 *   **Workflow:** The module simplifies the deployment of models (trained to use features created via Databricks Feature Engineering) by managing the process of creating the online feature tables and deploying the model with feature lookups.
 
 *   **Use Case:** Ideal for deploying models trained using the Databricks Feature Engineering Client in real-time inference scenarios. This ensures that models have access to the freshest feature data, leading to more accurate and reliable predictions. It is used in cases where the feature table is updated frequently, and the model needs to respond to the newest feature values. The module can be used to quickly spin up the serving endpoint for the model.
+
+Serving the model with an endpoint:
+
+![Serving](./images/inference_w_postman.png)
+
+
+#### `DataFabricator` Module
+
+*   The `DataFabricator` class provides a means to generate synthetic data that mirrors the statistical properties of an original dataset, while adhering to specific data quality standards and transformations.
+*   **Key Features:**
+    *   **DataLoader Integration:** Designed to work with a `DataLoader` object, making it compatible with the existing data loading and preparation pipeline.
+    *   **Immutability:** Implements mechanisms to prevent modification of key attributes, ensuring the integrity of the original dataset and configuration during synthetic data generation.
+    *   **Data Synthesis:** Generates synthetic data for both numerical and categorical features, preserving statistical distributions and handling unique identifiers.
+    *    **Customizable Data Generation:** Supports customization through passing a `num_rows` parameter.
+    *   **Data Validation:** Validates the generated synthetic data against pre-defined data types and constraints, ensuring consistency and quality.
+    *   **CSV Export:** Includes a utility function to save the generated synthetic data to a CSV file for further use.
+*   **Workflow:** The module takes a preprocessed `DataLoader` object as input, generates synthetic data based on the original data's statistics, validates the generated data, and provides options for saving the synthetic dataset.
+*   **Use Case:**  Beneficial for scenarios requiring synthetic data for testing, development, or privacy-preserving data sharing, such as when working with sensitive customer data or needing to augment training datasets.
+
+### Overview of `databricks.yml`
+
+![DABs](./images/dabs.png)
+
+*   The `databricks.yml` file defines the Databricks asset bundle for the `marvelous-databricks-course-acikgozmehmet` project, enabling automated deployment of workflows and resources to Databricks environments. This bundle orchestrates the data loading, preprocessing, model training, and model deployment process.
+
+*   **Key Components:**
+    *   **Bundle Definition:** Specifies the name and structure of the bundle, defining the project's deployment units.
+    *   **Artifacts:** Defines the build process for project artifacts, in this case, a Wheel package (`.whl`) created using `uv build`.
+    *   **Variables:** Declares variables that can be customized for different deployment environments, such as `git_sha`, `branch`, and `schedule_pause_status`.
+    *   **Resources (Jobs):** Configures the Databricks job, `hotel-reservations-workflow`, including its schedule (cron expression), timezone, pause status, and associated tags.
+    *   **Job Clusters:** Defines the compute resources (Databricks cluster) required to run the job.
+    *   **Tasks:** Defines a sequence of tasks that are executed as part of the job, including:
+        *   `load_preprocess`: Executes a Python script (`01_data_load_preprocess_script.py`) for data loading and preprocessing.
+        *   `train_model`: Executes a Python script (`02_train_register_fe_model_script.py`) for model training and registration.
+        *   `model_updated`: A conditional task that checks if the `train_model` task has an output equal to "1".
+        *   `deploy_model`: Executes a Python script (`03_deploy_fe_model_script.py`) for model deployment, contingent on the successful execution of `train_model` and a confirmation that the model needs to be updated based on a defined condition.
+    *   **Targets (Environments):** Defines deployment targets (e.g., `dev`, `acc`, `prd`) with environment-specific settings, such as the Databricks workspace host, root path, and cluster ID.
+
+*   **Workflow Orchestration:** The `databricks.yml` file orchestrates the entire hotel reservation prediction workflow by defining the tasks, dependencies, and environment-specific configurations. This automated deployment bundle streamlines the process of loading data, preprocessing, training, and deploying models within Databricks.
+
+Okay, I will provide you with a `README.md` paragraph for the `MonitoringManager` module, in context of the descriptions for the other modules.
+
+
+
+### Lakehouse Monitoring
+
+#### `MonitoringManager` Module
+
+![Monitoring](./images/monitoring.png)
+
+*   The `MonitoringManager` class provides a comprehensive solution for monitoring the performance and data quality of deployed machine-learning models. Specifically, it focuses on models built and served using the `FeatureLookUpModel` and `FeatureLookupServing` classes, leveraging Databricks Lakehouse Monitoring to provide insights into model behavior in real-time.
+*   **Key Features:**
+    *   **Integration with FeatureLookUpModel and FeatureLookupServing:** Specifically designed to work with models and serving endpoints created using these classes.
+    *   **Lakehouse Monitoring Setup:** Automates the creation and configuration of Lakehouse monitoring resources, tracking data quality, model performance, and other relevant metrics.
+    *   **Inference Data Processing:** Processes incoming inference data from serving endpoints, parsing request and response payloads for analysis.
+    *   **Ground Truth Integration:** Joins inference data with ground truth data (if available), enabling the calculation of accuracy, drift, and other performance metrics.
+    *   **Automated Table Creation:** Automatically generates and updates a dedicated monitoring table within the Lakehouse, consolidating inference data, ground truth, and feature information.
+    *   **Quality Monitor Configuration:** Configures and deploys a quality monitor for the model, providing alerts and insights into potential issues.
+    *   **Automated Refreshing:** Can automatically refresh quality monitors and monitoring tables.
+*   **Workflow:** The module ingests incoming inference data, combines it with available ground truth, constructs a monitoring table, configures and triggers a Lakehouse quality monitor, and then displays the results in the console.
+*   **Use Case:** Ideal for production deployments of `FeatureLookUpModel` models where continuous monitoring of data quality and model performance is required. It provides a robust and automated solution for ensuring that deployed models are performing as expected over time, providing early warning of potential issues such as data drift or model degradation.
+
+![Monitoring](./images/lakehouse_inference_monitoring.png)

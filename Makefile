@@ -20,5 +20,8 @@ build:
 
 copy-whl-to-dbx:
 	databricks fs cp ./dist/*.whl dbfs:/Volumes/mlops_dev/acikgozm/packages/hotel_reservations-latest-py3-none-any.whl --overwrite
+	# databricks fs cp ./dist/*.whl ./notebooks/hotel_reservations-latest-py3-none-any.whl --overwrite
+	rm -f ./notebooks/*.whl
+	cp ./dist/*.whl ./notebooks/.
 
-deploy: clean build copy-whl-to-dbx
+release: clean build copy-whl-to-dbx

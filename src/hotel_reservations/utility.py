@@ -1,8 +1,11 @@
 """Utility functions for credit default project."""
 
+import argparse
+import json
 import os
 import pathlib
 import sys
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
@@ -143,7 +146,7 @@ def call_endpoint(endpoint_name: str, records: list[dict]) -> tuple[int, str]:
     """Call a serving endpoint with the given endpoint name and record data.
 
     :param endpoint_name: The name of the serving endpoint to call
-    :param record: A list of dictionaries containing the data to send to the endpoint
+    :param records: A list of dictionaries containing the data to send to the endpoint
     :return: A tuple containing the response status code and text
     """
     serving_endpoint = f"https://{os.environ['DBR_HOST']}/serving-endpoints/{endpoint_name}/invocations"
@@ -187,3 +190,59 @@ def get_dbr_host() -> str:
         return spark.conf.get("spark.databricks.workspaceUrl")
     else:
         raise ValueError("This function is only supported on Databricks.")
+
+
+def create_parser(args: Sequence[str] = None) -> argparse.Namespace:
+    """Create and configure an argument parser for MLOps on Databricks.
+
+    This function sets up a parser with subparsers for different MLOps operations.
+
+    :param args: Optional sequence of command-line argument strings
+    :return: Parsed argument namespace
+    """
+    parser = argparse.ArgumentParser(description="Parser for MLOps on Databricks")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Common arguments
+    common_args = argparse.ArgumentParser(add_help=False)
+    common_args.add_argument("--root_path", type=str, required=True, help="Path of root on DAB")
+    common_args.add_argument("--env", type=str, required=True, help="Path of env file on DAB")
+
+    # Data ingestion subparser
+    subparsers.add_parser("data_ingestion", parents=[common_args], help="Data ingestion options")
+
+    # Model training & registering subparser
+    model_parser = subparsers.add_parser(
+        "model_train_register", parents=[common_args], help="Model training and registering options"
+    )
+    model_parser.add_argument("--git_sha", type=str, required=True, help="git sha of the commit")
+    model_parser.add_argument("--job_run_id", type=str, required=True, help="job run_id of the mlflow")
+    model_parser.add_argument("--branch", type=str, required=True, help="branch of the project")
+
+    # Deployment subparser
+    subparsers.add_parser("deployment", parents=[common_args], help="Deployment options")
+
+    # Deployment subparser
+    subparsers.add_parser("monitor", parents=[common_args], help="Monitoring options")
+
+    return parser.parse_args(args)
+
+
+def dict_to_json_to_dict(input_data: dict | list[dict]) -> tuple[str, dict | list[dict]]:
+    """Convert a dictionary or list of dictionaries to JSON and then back to the original format.
+
+    :param input_data (dict or list of dict): The input data to be converted.
+    :return: tuple: A tuple containing (json_string, output_data)
+                    json_string: A JSON-formatted string representation of the input data
+                    output_data: Data converted back from the JSON string (dict or list of dict).
+    :raises TypeError: If there's an error during conversion
+    """
+    try:
+        # Convert dict to JSON string
+        json_string = json.dumps(input_data, default=str, indent=2)
+        # Convert JSON string back to dict
+        output_data = json.loads(json_string)
+
+        return json_string, output_data
+    except (TypeError, json.JSONDecodeError) as e:
+        raise TypeError(f"Error: {str(e)}") from e

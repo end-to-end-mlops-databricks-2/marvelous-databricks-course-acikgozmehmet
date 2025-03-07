@@ -9,6 +9,8 @@ from loguru import logger
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.types import IntegerType
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 from sklearn.pipeline import Pipeline
@@ -233,11 +235,13 @@ class FeatureLookUpModel:
 
         logger.info(f"✅ Model logged successfully to {self.model_artifact_path}.")
 
-    def register_model(self) -> None:
+    def register_model(self) -> str:
         """Register the model in UC and set the latest version alias.
 
         This method registers the LightGBM pipeline model in MLflow, logs the registered version,
         and sets the 'latest-model' alias to the newly registered version.
+
+        :return: The latest version of the registered model
         """
         logger.info("Registering the model in UC")
         registered_model = mlflow.register_model(
@@ -248,6 +252,7 @@ class FeatureLookUpModel:
         logger.info(f"✅ Model '{registered_model.name}' registered as version {registered_model.version}.")
 
         latest_version = registered_model.version
+        logger.info(f"Latest model version: {latest_version}")
 
         client = MlflowClient()
         client.set_registered_model_alias(
@@ -255,7 +260,9 @@ class FeatureLookUpModel:
             alias="latest-model",
             version=latest_version,
         )
+
         logger.info("The model is registered in UC")
+        return latest_version
 
     def load_latest_model_and_predict(self, X: DataFrame) -> DataFrame:
         """Load the trained model from MLflow using Feature Engineering Client and make predictions.
@@ -266,3 +273,86 @@ class FeatureLookUpModel:
         model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.model_name}@latest-model"
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)
         return predictions
+
+    def update_feature_table(self, tables: list[str] | None = None) -> None:
+        """Update the feature table with data from specified tables.
+
+        This function executes SQL queries to insert the latest data from the specified tables
+        (or default tables if not provided) into the feature table based on the maximum update timestamp.
+
+        :param tables: Optional list of table names to update from. Defaults to ['train_set', 'test_set'] if not provided.
+        """
+        if tables is None:
+            tables = ["train_set", "test_set"]
+
+        for table in tables:
+            query = f"""
+            WITH max_timestamp AS (
+            SELECT MAX(update_timestamp_utc) AS max_update_timestamp
+            FROM {self.catalog_name}.{self.schema_name}.{table}
+            )
+            INSERT INTO {self.feature_table_name}
+            SELECT booking_id, repeated_guest, no_of_previous_cancellations, no_of_previous_bookings_not_canceled
+            FROM {self.catalog_name}.{self.schema_name}.{table}
+            WHERE update_timestamp_utc = (SELECT max_update_timestamp FROM max_timestamp)
+            """
+
+            logger.info(f"Executing SQL update for query {self.catalog_name}.{self.schema_name}.{table}...")
+            spark.sql(query)
+        logger.info(f"{self.feature_table_name} feature table updated successfully\n")
+
+    def should_register_new_model(self, test_set: DataFrame) -> bool:
+        """Evaluate the current model against the latest registered model.
+
+        Compares the performance of the current model with the latest registered model
+        using some metrics (such as accuracy and ROC AUC scores) on the test set.
+
+        :param test_set: The test dataset containing features and target variable
+        :return: True if the current model performs better, False otherwise
+        """
+        X_test = test_set.drop(self.target)
+        y_test = test_set.select(self.target).toPandas()
+
+        logger.info("Evaluating latest registered model performance")
+        # Make predictions by loading the latest model from MLflow using Feature Engineering Client
+        predictions_latest = (
+            self.load_latest_model_and_predict(X_test)
+            .select("prediction")
+            .withColumn("prediction", F.col("prediction").cast(IntegerType()))
+            .toPandas()
+        )
+
+        logger.info(f"Sample predictions (latest model): {predictions_latest.head(2)}")
+
+        accuracy_latest = round(accuracy_score(y_test, predictions_latest), 2)
+        auc_latest = round(roc_auc_score(y_test, predictions_latest), 2)
+        logger.info(f"Latest model metrics - Accuracy: {accuracy_latest}, ROC AUC: {auc_latest}")
+
+        logger.info("Evaluating current model performance")
+        # Make predictions with current model using Feature Engineering Client
+        current_model_uri = f"runs:/{self.run_id}/{self.model_artifact_path}"
+        predictions_current = (
+            self.fe.score_batch(model_uri=current_model_uri, df=X_test)
+            .select("prediction")
+            .withColumn("prediction", F.col("prediction").cast(IntegerType()))
+            .toPandas()
+        )
+
+        logger.info(f"Sample predictions (current model): {predictions_current.head(2)}")
+
+        accuracy_current = round(accuracy_score(y_test, predictions_current), 2)
+        auc_current = round(roc_auc_score(y_test, predictions_current), 2)
+        logger.info(f"Current model metrics - Accuracy: {accuracy_current}, ROC AUC: {auc_current}")
+
+        # Compare two models to pick the better one
+        # Different metrics can be used here. The goal here is to automate ML process, not ML training for this use case.
+        # Going with a simple metric for evaulation.
+        #  a new logic may be  as following  so that  if new model brings at least
+        #  1 % improvement (accuracy_current - accuracy_latest) * 100 > 1 it will be registered
+        if accuracy_current > accuracy_latest:
+            improvement = (accuracy_current - accuracy_latest) * 100
+            logger.info(f"Current model outperforms latest by {improvement:.2f}% in accuracy.")
+            return True
+        else:
+            logger.info("Latest registered model performs better; keeping it !")
+            return False

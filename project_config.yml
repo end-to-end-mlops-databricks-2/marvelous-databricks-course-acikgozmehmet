@@ -1,5 +1,21 @@
-catalog_name: mlops_dev
-schema_name: acikgozm
+prd:
+  catalog_name: mlops_prod
+  schema_name: acikgozm
+  pipeline_id: 1818db79-f551-49bb-ad4f-f61cac9d91fc
+acc:
+  catalog_name: mlops_acc
+  schema_name: acikgozm
+  pipeline_id: 94748db79-f551-49bb-ad4f-f61cac9d91fc
+dev:
+  catalog_name: mlops_dev
+  schema_name: acikgozm
+  pipeline_id: 01b28c81-5ea4-4e27-99c5-6fdfdc275566
+
+#default values for notebook implementations
+# catalog_name: mlops_dev
+# schema_name: acikgozm
+
+
 experiment_name: /Shared/hotel-reservations
 
 model:

@@ -1,16 +1,18 @@
 """Tests for the utility module."""
 
 import pathlib
+from argparse import Namespace
 from datetime import datetime
 
 import pandas as pd
 import pytest
 import yaml
 from loguru import logger
-from pydantic import ValidationError
 
 from hotel_reservations.config import Config
 from hotel_reservations.utility import (
+    create_parser,
+    dict_to_json_to_dict,
     get_current_git_sha,
     get_delta_table_version,
     is_databricks,
@@ -85,7 +87,7 @@ def test_load_config_missing_required_field(tmp_path: pathlib.Path) -> None:
     with open(config_file, "w", encoding="utf-8") as file:
         yaml.dump(config_data, file)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(KeyError):
         Config.from_yaml(config_file.as_posix())
 
 
@@ -190,3 +192,159 @@ def test_get_current_git_sha_when_file_not_found() -> None:
             if new_file_path and new_file_path.exists():
                 new_file_path.rename(file_path)
             print(f"{git_sha = }")
+
+
+def test_create_parser_data_ingestion_happy_path() -> None:
+    """Test the create_parser function for data ingestion with valid arguments.
+
+    Verifies that the returned Namespace object contains the expected values.
+    """
+    args = create_parser(["data_ingestion", "--root_path", "/path/to/root", "--env", "prod"])
+    assert isinstance(args, Namespace)
+    assert args.command == "data_ingestion"
+    assert args.root_path == "/path/to/root"
+    assert args.env == "prod"
+
+
+def test_create_parser_model_train_register_happy_path() -> None:
+    """Test the create_parser function for model training and registration with valid arguments.
+
+    Ensures that the returned Namespace object has the correct attributes and values.
+    """
+    args = create_parser(
+        [
+            "model_train_register",
+            "--root_path",
+            "/path/to/root",
+            "--env",
+            "dev",
+            "--git_sha",
+            "abc123",
+            "--job_run_id",
+            "12345",
+            "--branch",
+            "main",
+        ]
+    )
+    assert isinstance(args, Namespace)
+    assert args.command == "model_train_register"
+    assert args.root_path == "/path/to/root"
+    assert args.env == "dev"
+    assert args.git_sha == "abc123"
+    assert args.job_run_id == "12345"
+    assert args.branch == "main"
+
+
+def test_create_parser_create_parser_deployment_happy_path() -> None:
+    """Test the create_parser function for deployment with valid arguments.
+
+    Checks if the returned Namespace object contains the expected attributes and values.
+    """
+    args = create_parser(["deployment", "--root_path", "/path/to/root", "--env", "staging"])
+    assert isinstance(args, Namespace)
+    assert args.command == "deployment"
+    assert args.root_path == "/path/to/root"
+    assert args.env == "staging"
+
+
+def test_create_parser_missing_required_argument() -> None:
+    """Test the create_parser function with a missing required argument.
+
+    Verifies that a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser(["data_ingestion", "--root_path", "/path/to/root"])
+
+
+def test_create_parser_invalid_command() -> None:
+    """Test the create_parser function with an invalid command.
+
+    Ensures that a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser(["invalid_command", "--root_path", "/path/to/root", "--env", "prod"])
+
+
+def test_create_parser_model_train_register_missing_argument() -> None:
+    """Test the create_parser function for model training and registration with a missing argument.
+
+    Checks if a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser(
+            [
+                "model_train_register",
+                "--root_path",
+                "/path/to/root",
+                "--env",
+                "dev",
+                "--git_sha",
+                "abc123",
+                "--job_run_id",
+                "12345",
+            ]
+        )
+
+
+def test_create_parser_empty_args() -> None:
+    """Test the create_parser function with empty arguments.
+
+    Verifies that a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser([])
+
+
+def test_create_parser_help_option() -> None:
+    """Test the create_parser function with the help option.
+
+    Ensures that a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser(["--help"])
+
+
+def test_create_parser_subparser_help_option() -> None:
+    """Test the create_parser function with a subparser help option.
+
+    Checks if a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser(["data_ingestion", "--help"])
+
+
+def test_create_parser_extra_arguments() -> None:
+    """Test the create_parser function with extra arguments.
+
+    Verifies that a SystemExit exception is raised.
+    """
+    with pytest.raises(SystemExit):
+        create_parser(["data_ingestion", "--root_path", "/path/to/root", "--env", "prod", "extra_arg"])
+
+
+def test_dict_to_json_to_dict_w_single_dict() -> None:
+    """Test Converting a dictionary to JSON and back to a dictionary.
+
+    This function takes a dictionary, converts it to a JSON string, and then converts
+    the JSON string back to a dictionary.
+    """
+    my_dict = {"name": "John Doe", "age": 30, "city": "New York", "hobbies": ["reading", "swimming", "coding"]}
+    json_result, dict_result = dict_to_json_to_dict(my_dict)
+
+    assert isinstance(json_result, str)
+    assert isinstance(dict_result, dict)
+
+
+def test_dict_to_json_to_dict_w_list_of_dict() -> None:
+    """Test converting a list of dictionaries to JSON string and back to a list of dictionaries."""
+    list_of_dicts = [
+        {"name": "Alice", "age": 28, "city": "London"},
+        {"name": "Bob", "age": 35, "city": "Paris"},
+        {"name": "Charlie", "age": 42, "city": "Tokyo"},
+    ]
+
+    json_string, output_data = dict_to_json_to_dict(input_data=list_of_dicts)
+
+    assert isinstance(json_string, str)
+    assert isinstance(output_data, list)
+    assert isinstance(output_data[0], dict)
