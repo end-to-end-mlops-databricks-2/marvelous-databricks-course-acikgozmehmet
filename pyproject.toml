@@ -31,7 +31,7 @@ dev = ["databricks-connect>=15.4.1, <16",
        "pre-commit>=4.1.0, <5"]
 
 [build-system]
-requires = ["setuptools>=72.0", "setuptools_scm>=8"]
+requires = ["setuptools>=78.1.0", "wheel>=0.45.1","setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

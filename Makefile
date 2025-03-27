@@ -10,7 +10,7 @@ lint:
 	pre-commit run --all-files
 
 clean:
-	rm -rf __pycache__ dist
+	rm -rf __pycache__ dist build ./**/*.egg-info
 
 test:
 	pytest
