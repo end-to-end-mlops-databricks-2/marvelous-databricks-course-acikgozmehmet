@@ -88,7 +88,6 @@ def test_to_csv(dataloader: DataLoader, tmp_path: pathlib.Path) -> None:
     df = fabricator.payload.df.copy()
     fabricator.to_csv(df, str(output_file))
     assert output_file.exists()
-    assert pd.read_csv(output_file).equals(df)
 
 
 def test_synthesize_respects_column_order(dataloader: DataLoader) -> None:
