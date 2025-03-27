@@ -6,12 +6,7 @@ from typing import Any, Literal
 
 import yaml
 from loguru import logger
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    ValidationError,
-)
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from hotel_reservations.utility import get_current_git_sha
 
